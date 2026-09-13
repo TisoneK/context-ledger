@@ -40,6 +40,7 @@ is your stable session tag.
 
 | Name | Codename | Model | Doing |
 |------|----------|-------|-------|
+| Zuri | S008 | glm-5.3-flash | PATCH shift: roster status columns, auto office closure at >S020, append-only compaction, product-code leak stripping |
 
 **Clock out when your session ends**: remove your row in the closing
 `chore(ledger):` commit. The board shows who is in the office *now*;
