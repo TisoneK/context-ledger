@@ -255,6 +255,66 @@ EOF
 fi
 rm -rf "$MEM_SCRATCH"
 
+# ---- ledger-history: door-triggered close (core 1.1.0) ------------------------
+# A registry past office_size (default 20) means the next worker through the
+# door closes the office before working: status must say the close is due and
+# name the door rule, and the close checklist must demand re-seeded entries
+# that never cite the closed office's session numbers or codenames.
+HIST_SCRATCH=${TMPDIR:-/tmp}/ledger-test-hist
+rm -rf "$HIST_SCRATCH"
+mkdir -p "$HIST_SCRATCH/.context_ledger/memory/office/agents"
+cp -R "$CORE" "$HIST_SCRATCH/.context_ledger/core"
+: > "$HIST_SCRATCH/.context_ledger/memory/office/agents/roster.md"
+{
+  i=1
+  while [ "$i" -le 21 ]; do
+    printf '## 2026-09-01 — Session %d\n- **Agent:** t | **Model:** m | **Platform:** p | **Role:** engineer | **Core:** 1.0.6\n- **Task:** filler\n- **Outcome:** done\n\n' "$i"
+    i=$((i + 1))
+  done
+} > "$HIST_SCRATCH/.context_ledger/memory/office/agents/sessions.md"
+# real-world shape: the scratch is a git repo (Cmd-Close checks for a dirty
+# tree, and the ps1 port runs under Stop on native stderr)
+git -C "$HIST_SCRATCH" -c init.defaultBranch=main init -q 2>/dev/null || git -C "$HIST_SCRATCH" init -q
+git -C "$HIST_SCRATCH" -c user.name=t -c user.email=t@t commit -q --allow-empty -m init
+
+sh "$HIST_SCRATCH/.context_ledger/core/bin/ledger-history" status > "$HIST_SCRATCH/.hist-out.log" 2>&1
+if grep -q "A close is DUE" "$HIST_SCRATCH/.hist-out.log" \
+   && grep -q "The next worker through the door runs it" "$HIST_SCRATCH/.hist-out.log"; then
+  ok "hist: status at office_size names the door rule (close is DUE)"
+else
+  bad "hist: status does not report the door-triggered close"
+  tail -n 8 "$HIST_SCRATCH/.hist-out.log"
+fi
+
+sh "$HIST_SCRATCH/.context_ledger/core/bin/ledger-history" close > "$HIST_SCRATCH/.hist-close.log" 2>&1
+if grep -q "Dry run" "$HIST_SCRATCH/.hist-close.log" \
+   && grep -q "never cite" "$HIST_SCRATCH/.hist-close.log" \
+   && grep -q "session numbers or codenames" "$HIST_SCRATCH/.hist-close.log" \
+   && grep -q "numbering starts clean" "$HIST_SCRATCH/.hist-close.log"; then
+  ok "hist: close checklist demands no old-office session numbers in re-seeds"
+else
+  bad "hist: close checklist lacks the no-leak re-seed rule"
+  tail -n 12 "$HIST_SCRATCH/.hist-close.log"
+fi
+
+if [ -n "$PS_BIN" ]; then
+  if command -v cygpath >/dev/null 2>&1; then
+    HIST_PS_W=$(cygpath -w "$HIST_SCRATCH/.context_ledger/core/bin/ledger-history.ps1")
+  else
+    HIST_PS_W=$HIST_SCRATCH/.context_ledger/core/bin/ledger-history.ps1
+  fi
+  "$PS_BIN" -NoProfile -ExecutionPolicy Bypass -File "$HIST_PS_W" close > "$HIST_SCRATCH/.hist-close.log" 2>&1
+  if grep -q "Dry run" "$HIST_SCRATCH/.hist-close.log" \
+     && grep -q "never cite" "$HIST_SCRATCH/.hist-close.log" \
+     && grep -q "numbering starts clean" "$HIST_SCRATCH/.hist-close.log"; then
+    ok "hist ps1: close checklist carries the no-leak re-seed rule"
+  else
+    bad "hist ps1: close checklist lacks the no-leak re-seed rule"
+    tail -n 12 "$HIST_SCRATCH/.hist-close.log"
+  fi
+fi
+rm -rf "$HIST_SCRATCH"
+
 # ---- UTF-8 encoding (core 1.0.2) --------------------------------------------
 # Windows PowerShell 5.1 reads BOM-less files in the ANSI codepage unless
 # -Encoding UTF8 is passed. The office migration rewrote history.conf through

@@ -55,7 +55,14 @@ If you read nothing else, obey these rules:
    the work moves — the next live worker reads them to coordinate with
    you at a glance. The push claims the codename — whoever's
    check-in commit lands first keeps it; on a collision fix your row to
-   the next free number, never drop a peer's row. Then choose the mode
+   the next free number, never drop a peer's row. And if the session registry you read at the door is already
+   past `office_size` sessions (default 20 — your codename would be
+   past S020), the office is full: close it before working
+   (`ledger-history close`, dry run then `--confirm`), fill the
+   permanent record, re-seed open threads into the fresh office —
+   re-seeded entries describe the work in plain words and never cite
+   old session numbers or codenames — then sign the new board;
+   codenames restart at `S001`. Then choose the mode
    from evidence. Roster edits are additive — your row only: a live
    row you didn't write is a colleague's check-in, not sample text — never
    adopt a peer's name, never let an edit span a peer's row, review the

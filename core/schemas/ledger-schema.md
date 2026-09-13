@@ -342,6 +342,27 @@ the office boundary. This is what lets a closed office be archived and
 eventually deleted without losing institutional knowledge: the permanent
 record plus the durable files remember what matters.
 
+**Re-seed content, not record numbers.** A re-seeded backlog row,
+decision, or log entry must stand alone: it never cites the closed
+office's session numbers or codenames ("as fixed in S014", "see Session
+12") — those point into the frozen copy, which the new office never
+reads. Describe the work and its state in plain words; the permanent
+record (`history/office-<NNN>.md`, "Open threads") is the bridge between
+the two offices. The new office's own numbering starts clean — codenames
+from `S001`, session entries from `Session 1`, ADRs and backlog IDs from
+1.
+
+**The door trigger — a full office closes at check-in.** Closing at
+`office_size` is not optional tidy-up the next session might get to:
+the worker whose check-in read finds `agents/sessions.md` past
+`office_size` (default 20 — the codename they would claim is past S020)
+runs the close right after their check-in push, before the deep read and
+any analysis, re-seeds the open threads, and signs the fresh office's
+board. `ledger-history status` and `ledger-gates checkpoint` warn when a
+close is due, but the warning is a backstop — the trigger fires at the
+door because an over-full registry is exactly how a fresh session gets
+misdirected by stale numbers.
+
 ---
 
 ## Peer collaboration
