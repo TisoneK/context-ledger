@@ -12,6 +12,6 @@ entry and backlog before starting.
 - **Status:** in-progress | done | blocked (<blocker>)
 -->
 
-- **Session:** 2026-09-12 — Ines / glm-5.3-flash
-- **Task:** none — core 1.0.6 shipped (check-in at the entrance: sign two files, push, then the deep read; codename claimed by push order); session closed
-- **Status:** idle
+- **Session:** 2026-09-13 — Zuri / glm-5.3-flash
+- **Task:** supervisor PATCH — roster Status + Status-detail columns; auto office close when the registry passes S020 with no old-office numbers leaking into the fresh office; shrink/group the append-only logs; strictly bar ledger vocabulary in product code and strip old leaks
+- **Status:** in-progress
