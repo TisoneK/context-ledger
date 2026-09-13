@@ -182,6 +182,79 @@ else
   fi
 fi
 
+# ---- ledger-mem: roster Status column (core 1.1.0) ---------------------------
+# The roster board is the next worker's at-a-glance coordination surface: a
+# real row (codename S<NNN>) with an empty or missing Status cell draws a
+# warn-only nudge — never a failure, and legacy four-column rows warn too.
+MEM_SCRATCH=${TMPDIR:-/tmp}/ledger-test-mem
+rm -rf "$MEM_SCRATCH"
+mkdir -p "$MEM_SCRATCH/.context_ledger/core" "$MEM_SCRATCH/.context_ledger/memory/office/agents"
+cp -R "$CORE/bin" "$MEM_SCRATCH/.context_ledger/core/bin"
+MEM_SH="$MEM_SCRATCH/.context_ledger/core/bin/ledger-mem"
+ROSTER="$MEM_SCRATCH/.context_ledger/memory/office/agents/roster.md"
+
+cat > "$ROSTER" <<'EOF'
+| Name | Codename | Model | Doing | Status | Status detail |
+|------|----------|-------|-------|--------|---------------|
+| Ada | S001 | m | reviewing the loop | Working | Phase 2 review, Step 9 |
+| Kwame | S002 | m | docs pass | Done | Shipped: docs released |
+EOF
+if sh "$MEM_SH" check > "$MEM_SCRATCH/.mem-out.log" 2>&1 \
+   && ! grep -q "WARN roster.md" "$MEM_SCRATCH/.mem-out.log"; then
+  ok "mem: filled Status cells pass check with no warn"
+else
+  bad "mem: filled Status cells flagged or check failed"
+  tail -n 5 "$MEM_SCRATCH/.mem-out.log"
+fi
+
+cat > "$ROSTER" <<'EOF'
+| Name | Codename | Model | Doing | Status | Status detail |
+|------|----------|-------|-------|--------|---------------|
+| Ada | S001 | m | reviewing the loop |  |  |
+EOF
+if sh "$MEM_SH" check > "$MEM_SCRATCH/.mem-out.log" 2>&1; then
+  if grep -q "WARN roster.md" "$MEM_SCRATCH/.mem-out.log" \
+     && grep -q "no Status" "$MEM_SCRATCH/.mem-out.log"; then
+    ok "mem: empty Status cell draws a warn-only nudge"
+  else
+    bad "mem: empty Status cell not flagged"
+  fi
+else
+  bad "mem: empty Status cell failed the check (should warn only)"
+fi
+
+cat > "$ROSTER" <<'EOF'
+| Name | Codename | Model | Doing |
+|------|----------|-------|-------|
+| Ada | S001 | m | reviewing the loop |
+EOF
+if sh "$MEM_SH" check > "$MEM_SCRATCH/.mem-out.log" 2>&1 \
+   && grep -q "no Status" "$MEM_SCRATCH/.mem-out.log"; then
+  ok "mem: legacy four-column row warns without failing"
+else
+  bad "mem: legacy four-column row not warned or check failed"
+fi
+
+if [ -n "$PS_BIN" ]; then
+  if command -v cygpath >/dev/null 2>&1; then
+    MEM_PS_W=$(cygpath -w "$MEM_SCRATCH/.context_ledger/core/bin/ledger-mem.ps1")
+  else
+    MEM_PS_W=$MEM_SCRATCH/.context_ledger/core/bin/ledger-mem.ps1
+  fi
+  cat > "$ROSTER" <<'EOF'
+| Name | Codename | Model | Doing | Status | Status detail |
+|------|----------|-------|-------|--------|---------------|
+| Ada | S001 | m | reviewing the loop |  |  |
+EOF
+  if "$PS_BIN" -NoProfile -ExecutionPolicy Bypass -File "$MEM_PS_W" check > "$MEM_SCRATCH/.mem-out.log" 2>&1 \
+     && grep -q "no Status" "$MEM_SCRATCH/.mem-out.log"; then
+    ok "mem ps1: empty Status cell draws the same warn-only nudge"
+  else
+    bad "mem ps1: empty Status cell not warned or check failed"
+  fi
+fi
+rm -rf "$MEM_SCRATCH"
+
 # ---- UTF-8 encoding (core 1.0.2) --------------------------------------------
 # Windows PowerShell 5.1 reads BOM-less files in the ANSI codepage unless
 # -Encoding UTF8 is passed. The office migration rewrote history.conf through

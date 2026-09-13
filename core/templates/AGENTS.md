@@ -44,11 +44,16 @@ If you read nothing else, obey these rules:
 5. **Check in first — at the entrance, before any analysis.** Every session
    (solo or collaboration) adds or updates its row in
    `memory/office/agents/roster.md` — real name you pick (unique per office),
-   codename `S<NNN>`, model, one line on what you're on — and pushes it
+   codename `S<NNN>`, model, one line on what you're on, and a Status
+   (`Working` at sign-in, then `Done` or `Blocked`) with a one-line
+   status detail (the stage reached, what shipped — "Shipped: …", or the
+   blocker) — and pushes it
    BEFORE reading protocol or product code: the startup read comes after
    your row is on the board, because two workers who read first both see
    an empty office, both take the same codename, and meet mid-session
-   fighting over the main tree. The push claims the codename — whoever's
+   fighting over the main tree. Keep your row's Status cells current as
+   the work moves — the next live worker reads them to coordinate with
+   you at a glance. The push claims the codename — whoever's
    check-in commit lands first keeps it; on a collision fix your row to
    the next free number, never drop a peer's row. Then choose the mode
    from evidence. Roster edits are additive — your row only: a live

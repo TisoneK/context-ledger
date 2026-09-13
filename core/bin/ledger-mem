@@ -37,10 +37,11 @@ usage() {
   say ""
   say "  check   duplicate keys in the update-in-place registries"
   say "          (ai-models.md by Agent+Model, environments.md by Identify-by;"
-  say "          roster.md by Name and codename) plus a warn-only board-vs-"
-  say "          duty-log audit: a roster row whose Session N is already in"
-  say "          agents/sessions.md means the session never clocked out,"
-  say "          and a duplicated Session N means a resumed session re-logged"
+  say "          roster.md by Name and codename) plus warn-only audits: a"
+  say "          roster row with no Status cell (the at-a-glance column), a"
+  say "          roster row whose Session N is already in agents/sessions.md"
+  say "          means the session never clocked out, and a duplicated"
+  say "          Session N means a resumed session re-logged"
   say "  lint    .context_ledger vocabulary (ADR-N, bug IDs, .context_ledger/ paths) leaking"
   say "          into the staged product diff"
   say "  prune   advise archiving resolved/superseded entries out of the"
@@ -114,9 +115,12 @@ check_environments() {
   ' "$_f"
 }
 
-# team roster: a row is | Name | Codename | Model | Doing |. Both the name and
-# the codename must be unique within the current office. A real row has an
-# S<NNN> codename in column 2 (this skips the header, separator, and template).
+# team roster: a row is | Name | Codename | Model | Doing | Status | Status
+# detail |. Both the name and the codename must be unique within the current
+# office, and the Status cells are the at-a-glance coordination signal — a
+# real row (codename S<NNN>) with an empty or missing Status cell draws a
+# warn-only nudge (legacy pre-1.1.0 four-column rows warn too; they fail
+# nothing). This skips the header, separator, and template.
 check_roster() {
   _f=$OFFICE_DIR/agents/roster.md
   [ -f "$_f" ] || return 0
@@ -129,6 +133,9 @@ check_roster() {
       if (code !~ /^[Ss][0-9]+$/) next
       nseen[name]++; nwhere[name] = nwhere[name] " " FNR
       cseen[code]++; cwhere[code] = cwhere[code] " " FNR
+      st = (n >= 7) ? c[6] : ""
+      gsub(/^[[:space:]]+|[[:space:]]+$/, "", st)
+      if (st == "") nostat[code] = nwhere[code]
     }
     END {
       d = 0
@@ -138,6 +145,8 @@ check_roster() {
       for (k in cseen) if (cseen[k] > 1) {
         printf "DUP roster.md: codename \"%s\" on %d rows (lines%s) — one row per session codename; edit your row instead of adding a second\n", k, cseen[k], cwhere[k] | "cat 1>&2"; d++
       }
+      for (k in nostat)
+        printf "WARN roster.md: codename %s has no Status — the board'"'"'s at-a-glance column (Working/Done/Blocked + a status-detail line) is empty; edit your row\n", k
       exit (d > 0) ? 1 : 0
     }
   ' "$_f"

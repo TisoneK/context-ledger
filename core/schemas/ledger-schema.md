@@ -156,7 +156,7 @@ File inventory, write modes, and scopes. **Write modes:**
 | Path (under `.context_ledger/memory/office/`) | Mode | Scope | Holds |
 |---|---|---|---|
 | `agents/sessions.md` | append-only (current office) | project | One entry per session: agent, model, platform, task, commits, outcome |
-| `agents/roster.md` | update-in-place (current office) | project | Team roster — the "who's in the office *now*" board. Every session (solo included) adds its row at check-in — at the entrance, before the deep read, not after analysis — and pushes it; the push claims the codename (the earlier commit keeps a colliding number; the later worker fixes their own row to the next free codename). Removes the row (clocks out) at session end. Who was on duty *when* lives in `agents/sessions.md` + this file's git history. Name and codename each unique in the office; `ledger-mem check` enforces it. Identity is *claimed* at check-in (fresh name + codename you pick), never *inferred* from a model/harness-string match — model strings are shared across sessions, so duplicate model values are normal. Never reset or trimmed: the whole office is frozen verbatim at close |
+| `agents/roster.md` | update-in-place (current office) | project | Team roster — the "who's in the office *now*" board. Every session (solo included) adds its row at check-in — at the entrance, before the deep read, not after analysis — and pushes it; the push claims the codename (the earlier commit keeps a colliding number; the later worker fixes their own row to the next free codename). Columns: Name; codename `S<NNN>`; model; Doing (what you're on); **Status** — one short word, `Working` at check-in, edited in place to `Done` or `Blocked` as the work moves; **Status detail** — the one line the next worker needs (for `Working`: the stage or step reached; for `Done`: the outcome and extent, "Shipped: …"; for `Blocked`: what you're waiting on and from whom). Clock out (remove the row) when actually leaving — a finished session that stays live shows `Done` + its shipped outcome. Who was on duty *when* lives in `agents/sessions.md` + this file's git history. Name and codename each unique in the office; `ledger-mem check` enforces that and warns on an empty Status cell. Identity is *claimed* at check-in (fresh name + codename you pick), never *inferred* from a model/harness-string match — model strings are shared across sessions, so duplicate model values are normal. Never reset or trimmed: the whole office is frozen verbatim at close |
 | `tasks/current.md` | overwrite | project | The one task in progress — a lock only in single-agent mode |
 | `tasks/backlog.md` | live queue (priority-grouped tables; add/delete rows) | project | Open items for future sessions only — one row per item in its priority table (High/Medium/Low, ID + Summary); a finished item's row is deleted, its completion record is the session entry + commit. Office-scoped: still-open items are re-seeded into the next office at close |
 | `plans/decisions.md` | append-only | project | ADR-style decisions — respected, not relitigated. Decisions still in force are re-seeded into the next office and recorded in the office's permanent record |
@@ -295,9 +295,14 @@ stable. **Durable files never rotate:** `user/`, `system/`,
 
 The **roster** is the team board for the current office: **every session
 (solo included) checks in** — picks a human name, adds a row (Name,
-codename `S<NNN>`, model, what they're doing), and pushes it at the door,
-before the deep read and any product work — and **clocks out** by removing the row in the closing
-memory commit, so the board shows who is in the office *now*. Who was on
+codename `S<NNN>`, model, what they're doing, a `Working`/`Done`/`Blocked`
+**Status**, and a one-line **Status detail**: how far the work has got,
+what shipped, or what's blocking), and pushes it at the door,
+before the deep read and any product work. The Status cells are the
+at-a-glance coordination signal — each worker edits their own row's
+cells in place as the work moves, so the next live worker sees what is
+finished, what is in flight at which stage, and what is blocked without
+asking. Clocking out removes the row in the closing memory commit, so the board shows who is in the office *now*. Who was on
 duty *when* is the duty log's job: append-only `agents/sessions.md`
 entries plus the roster file's own git history (check-in commit opens a
 shift, clock-out closes it). Each agent presents itself by that name in

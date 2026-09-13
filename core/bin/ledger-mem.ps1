@@ -33,10 +33,11 @@ function Usage {
     '',
     '  check   duplicate keys in the update-in-place registries',
     '          (ai-models.md by Agent+Model, environments.md by Identify-by;',
-    '          roster.md by Name and codename) plus a warn-only board-vs-',
-    '          duty-log audit: a roster row whose Session N is already in',
-    '          agents/sessions.md means the session never clocked out,',
-    '          and a duplicated Session N means a resumed session re-logged',
+    '          roster.md by Name and codename) plus warn-only audits: a',
+    '          roster row with no Status cell (the at-a-glance column), a',
+    '          roster row whose Session N is already in agents/sessions.md',
+    '          means the session never clocked out, and a duplicated',
+    '          Session N means a resumed session re-logged',
     '  lint    .context_ledger vocabulary (ADR-N, bug IDs, .context_ledger/ paths) leaking',
     '          into the staged product diff',
     '  prune   advise archiving resolved/superseded entries out of the',
@@ -105,9 +106,13 @@ function Check-Environments {
 }
 
 function Check-Roster {
+  # Rows are | Name | Codename | Model | Doing | Status | Status detail |.
+  # Name + codename must be unique in the office; a real row (codename
+  # S<NNN>) with an empty or missing Status cell draws a warn-only nudge
+  # (legacy pre-1.1.0 four-column rows warn too; they fail nothing).
   $f = Join-Path $officeDir 'agents/roster.md'
   if (-not (Test-Path -LiteralPath $f)) { return $true }
-  $nseen = @{}; $nwhere = @{}; $cseen = @{}; $cwhere = @{}; $ln = 0
+  $nseen = @{}; $nwhere = @{}; $cseen = @{}; $cwhere = @{}; $nostat = @{}; $ln = 0
   foreach ($raw in Get-Content -Encoding UTF8 -LiteralPath $f) {
     $ln++
     $line = $raw.TrimEnd("`r")
@@ -118,10 +123,17 @@ function Check-Roster {
     if ($code -notmatch '^[Ss][0-9]+$') { continue }
     if ($nseen.ContainsKey($name)) { $nseen[$name]++; $nwhere[$name] += " $ln" } else { $nseen[$name] = 1; $nwhere[$name] = "$ln" }
     if ($cseen.ContainsKey($code)) { $cseen[$code]++; $cwhere[$code] += " $ln" } else { $cseen[$code] = 1; $cwhere[$code] = "$ln" }
+    $st = if ($cells.Count -ge 8) { $cells[5].Trim() } else { '' }
+    if ($st -eq '') { $nostat[$code] = "$ln" }
   }
   $dup = $false
   foreach ($k in $nseen.Keys) { if ($nseen[$k] -gt 1) { ErrLine ('DUP roster.md: name "{0}" used by {1} rows (lines {2}) - one name per office; pick another, or edit your own row' -f $k, $nseen[$k], $nwhere[$k].Trim()); $dup = $true } }
   foreach ($k in $cseen.Keys) { if ($cseen[$k] -gt 1) { ErrLine ('DUP roster.md: codename "{0}" on {1} rows (lines {2}) - one row per session codename; edit your row instead of adding a second' -f $k, $cseen[$k], $cwhere[$k].Trim()); $dup = $true } }
+  # The warn goes straight to the console, not Say/Write-Output: the check
+  # dispatcher captures this function's output into $ok3, which would
+  # silently swallow any Write-Output warning (the DUP errors above survive
+  # because ErrLine writes to stderr).
+  foreach ($k in $nostat.Keys) { [Console]::Out.WriteLine(('WARN roster.md: codename {0} has no Status - the board''s at-a-glance column (Working/Done/Blocked + a status-detail line) is empty; edit your row' -f $k)) }
   return (-not $dup)
 }
 
