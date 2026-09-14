@@ -1,6 +1,6 @@
-# Team Roster (current group — update in place)
+# Team Roster (current office — update in place)
 
-The people working this group, and as whom. Think of it as a workplace: you
+The people working this office, and as whom. Think of it as a workplace: you
 are a coworker on a team, the human is your supervisor, and this is the board
 by the door that says who's in and what they're on.
 
@@ -18,7 +18,7 @@ Kwame, Mei, …) — and add your row. Present yourself by that name from then
 on: in collaboration events, in your session log, when you report to the
 supervisor. "John (S427)", never "peer" or a bare ID.
 
-Your **name and your codename are each unique within this group**. If a name
+Your **name and your codename are each unique within this office**. If a name
 is already taken, pick another — there is only one John on the team at a
 time. The name is how the team and the supervisor refer to you; the codename
 is your stable session tag.
@@ -33,24 +33,45 @@ is your stable session tag.
   clocking out in *this same session* (or the user says the row is
   yours).
 - **Doing** — one line: your role / persona / what you're on right now.
+- **Status** — one short word for how your work stands: `Working`
+  (what you sign in with), `Done`, or `Blocked`. Edit it in place as
+  your work moves — this is the at-a-glance coordination signal.
+- **Status detail** — the one line the next worker needs:
+  - `Working` → how far you've got — the stage or step of the protocol
+    you've reached ("Phase 2 review, Step 9").
+  - `Done` → the outcome and its extent — "Shipped: core 1.1.0
+    released and self-hosted".
+  - `Blocked` → what you're waiting on, and from whom.
 
-<!-- TEMPLATE — one row per person in this group:
-| <Name> | S<NNN> | <model id> | <what you're doing> |
+<!-- TEMPLATE — one row per person in this office:
+| <Name> | S<NNN> | <model id> | <what you're doing> | Working | <stage reached / shipped outcome / blocker> |
 -->
 
-| Name | Codename | Model | Doing |
-|------|----------|-------|-------|
-| Zuri | S008 | glm-5.3-flash | PATCH shift: roster status columns, auto office closure at >S020, append-only compaction, product-code leak stripping |
+| Name | Codename | Model | Doing | Status | Status detail |
+|------|----------|-------|-------|--------|---------------|
+| Zuri | S008 | glm-5.3-flash | PATCH shift — core 1.1.0 shipped + self-hosted (roster status, door close, compaction, leak strip) | Working | Clock-out wrap-up: logging the session, clearing current.md |
+
+**Keep your Status cells current — that is what the board is for.** The
+next live worker reads it to know at a glance what a peer has finished,
+what is in flight and at which stage, and what is blocked — and so how
+to coordinate with you without interrupting. Edit your own row (don't
+append a second); when your work moves, update the Doing cell and the
+Status cells in the same edit. `ledger-mem check` warns when a real row
+leaves its Status cell empty.
 
 **Clock out when your session ends**: remove your row in the closing
 `chore(ledger):` commit. The board shows who is in the office *now*;
 who was on duty *when* lives in the system log, not here — your
 append-only entry in `agents/sessions.md`, plus this file's own git
 history (the check-in commit opens your shift, the clock-out commit
-closes it). A row left behind sends the next agent hunting for a peer
-who has left. `ledger-mem check` flags a duplicate name or codename,
-and warns when a session entry was logged while your row still claimed
-the office. This roster is the **current group's** only — it resets when
-the group closes (`ledger-history close`), and the closed group's roster
-is kept in `.context_ledger/history/`. Update your own row (don't append a
-second); when your work changes, edit the "Doing" cell.
+closes it). Until you actually leave, a finished session stays on the
+board as `Done` + what shipped — exactly what the next worker needs to
+see. A row left behind after you leave sends the next agent hunting for
+a peer who has gone. `ledger-mem check` flags a duplicate name or
+codename, and warns when a session entry was logged while your row
+still claimed the office. This roster is the **current office's** only —
+it is never reset or trimmed: when the office fills up, `ledger-history
+close` freezes this whole directory verbatim into `.context_ledger/history/`
+(every shift preserved), and the next office starts with an empty board.
+The permanent record `history/office-<NNN>.md` keeps each office's duty
+summary forever.
