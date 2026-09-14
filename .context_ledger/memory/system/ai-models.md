@@ -39,8 +39,6 @@ Update in place when a newer session contradicts an old observation.
 - **<agent> / <model>:** <what was observed — concrete and checkable, e.g. "Read tool truncates files >500 lines; needs offset/limit", "SSRF fix shipped with regression test, verified green"> (YYYY-MM-DD)
 -->
 
-## Observations
-
 - **Ada / glm-5.3-flash:** strict-profile JSON (one "key": value per line, escaped body) round-trips exactly through pure POSIX sh readers (sed/awk) and Windows PowerShell `ConvertFrom-Json` alike; PowerShell gotcha surfaced and fixed — a bare `-or` between two command calls inside `if()` does not evaluate as two boolean results, so parenthesize or name the booleans (2026-09-10)
 - **Noor / glm-5.3-flash:** verified on this machine that a PowerShell gate command whose pipeline has two external stages masks an earlier failure ($LASTEXITCODE ends up the tail's), while a `Tee-Object` tail preserves the tool's exit code — the parser-audit rule in ledger-gates.ps1 1.0.1 is built on that distinction; PS 5.1 `Parser::ParseInput/ParseFile` returns errors for 5.1-hostile syntax rather than throwing (2026-09-11)
 - **Kai / glm-5.3-flash:** Windows PowerShell 5.1 parses BOM-less .ps1 source as cp1252 — a non-ASCII string literal in ps1 source double-encodes on write (em-dash literal → `â€"` bytes); keep ps1 string literals pure ASCII and emit non-ASCII output via `[char]0x2014`-style code points. Same class: `Get-Content` without `-Encoding UTF8` reads BOM-less files as cp1252. (2026-09-11)

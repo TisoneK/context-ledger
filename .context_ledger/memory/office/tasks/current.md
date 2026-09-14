@@ -12,6 +12,6 @@ entry and backlog before starting.
 - **Status:** in-progress | done | blocked (<blocker>)
 -->
 
-- **Session:** 2026-09-14 — Zuri / glm-5.3-flash
-- **Task:** none — core 1.1.0 + 1.1.1 shipped and self-hosted (roster Status board, door-triggered office close, append-only log compaction, one-way-linkage lint --tree + strip-on-sight); session closed
-- **Status:** idle
+- **Session:** 2026-09-14 — Nadia / qwen3.8-flash[1m]
+- **Task:** general sweep on the package: fix the logged open flaw (prune closed-marker over-match → core PATCH), strip the on-sight `.gitattributes` bug-ID leak, compact the two fixed-in-package flaw entries to the archive; sweep remaining areas for safe fixes
+- **Status:** in-progress
