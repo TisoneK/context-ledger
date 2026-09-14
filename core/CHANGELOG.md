@@ -14,7 +14,7 @@ bump MINOR; wording and fixes bump PATCH.
 
 **A comment cleaned by the rule 1.1.0 just enforced.** The one-way-linkage
 sweep applied to the package's own code: `ledger-sync` cited a backlog bug
-ID (`B-2026-08-30-17`) in a source comment. That ID resolves only in this
+ID in a source comment. That ID resolves only in this
 repo's own `tasks/backlog.md`, which is never vendored into a consumer's
 `core/` — so the reference was a dangling pointer for every downstream
 reader, the exact defect `ledger-mem lint --tree` now hunts. The reason was

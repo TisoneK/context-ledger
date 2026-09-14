@@ -3,7 +3,7 @@
 # The core is integrity-checked byte-for-byte against core/MANIFEST.sha256,
 # whose hashes are computed over LF bytes. If a Windows checkout with
 # core.autocrlf=true rewrites these files to CRLF, every hash mismatches and
-# the sh manifest parser dies on '\r'-suffixed filenames (B-2026-08-30-17).
+# the sh manifest parser dies on '\r'-suffixed filenames.
 # Forcing eol=lf keeps the working tree byte-identical to the manifest on
 # every platform. PowerShell and Git Bash both read LF without issue.
 #
