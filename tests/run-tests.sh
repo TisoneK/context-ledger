@@ -522,6 +522,48 @@ else
   say "  skip: UTF-8 encoding regressions (no powershell/pwsh on PATH)"
 fi
 
+# ---- ledger-sync harvest: office-era log paths ------------------------------
+# Since core 1.0.0 the flaw/inefficiency logs live under memory/office/;
+# harvest (package-mode, sh-only) must read the office layout or it collects
+# NOTHING from every migrated project (flaws reported upstream, never
+# harvested). Scratch package clone + sibling project checkout with open
+# entries in both office logs and a [core-defect] override (overrides stay
+# at the memory root in both layouts).
+HV_SCRATCH=${TMPDIR:-/tmp}/ledger-test-harvest
+rm -rf "$HV_SCRATCH"
+mkdir -p "$HV_SCRATCH/pkg/core/bin" "$HV_SCRATCH/proj/.context_ledger/memory/office/flaws" \
+         "$HV_SCRATCH/proj/.context_ledger/memory/office/inefficiencies" \
+         "$HV_SCRATCH/proj/.context_ledger/memory/overrides"
+cp "$CORE/bin/ledger-sync" "$HV_SCRATCH/pkg/core/bin/ledger-sync"
+printf 'https://example.invalid/proj.git  bootstrapped=2026-09-14  core=1.1.2\n' > "$HV_SCRATCH/pkg/fleet.md"
+cat > "$HV_SCRATCH/proj/.context_ledger/memory/office/flaws/log.md" <<'HVF1'
+# Flaws (office)
+## 2026-09-14 -- Tester / m (Session 1)
+- **Flaw:** office-era flaw entry for the harvest regression.
+- **Status:** open
+HVF1
+cat > "$HV_SCRATCH/proj/.context_ledger/memory/office/inefficiencies/log.md" <<'HVF2'
+# Inefficiencies (office)
+## 2026-09-14 -- Tester / m
+- **Problem:** office-era inefficiency entry for the harvest regression.
+- **Upstream:** candidate
+HVF2
+printf -- '- **[core-defect]** harvest regression override bullet (set by tester, 2026-09-14)\n' \
+  > "$HV_SCRATCH/proj/.context_ledger/memory/overrides/rules.md"
+( cd "$HV_SCRATCH/proj" && git -c init.defaultBranch=main init -q \
+  && git remote add origin https://example.invalid/proj.git )
+sh "$HV_SCRATCH/pkg/core/bin/ledger-sync" harvest > "$HV_SCRATCH/.harvest.log" 2>&1
+if grep -q "proj: +1 flaws, +1 inefficiencies, +1 overrides" "$HV_SCRATCH/.harvest.log" \
+   && ls "$HV_SCRATCH/pkg/inbox"/harvest-*.md >/dev/null 2>&1 \
+   && grep -q "office-era flaw entry" "$HV_SCRATCH/pkg/inbox"/harvest-*.md \
+   && grep -q "office-era inefficiency entry" "$HV_SCRATCH/pkg/inbox"/harvest-*.md; then
+  ok "harvest: reads office-era memory/office/ logs (+ root overrides)"
+else
+  bad "harvest: missed the office-era layout"
+  cat "$HV_SCRATCH/.harvest.log"
+fi
+rm -rf "$HV_SCRATCH"
+
 rm -rf "$SH_SCRATCH" "$PS_SCRATCH" 2>/dev/null || true
 
 say ""
