@@ -10,6 +10,22 @@ bump MINOR; wording and fixes bump PATCH.
 
 ---
 
+## 1.1.1 — 2026-09-13
+
+**A comment cleaned by the rule 1.1.0 just enforced.** The one-way-linkage
+sweep applied to the package's own code: `ledger-sync` cited a backlog bug
+ID (`B-2026-08-30-17`) in a source comment. That ID resolves only in this
+repo's own `tasks/backlog.md`, which is never vendored into a consumer's
+`core/` — so the reference was a dangling pointer for every downstream
+reader, the exact defect `ledger-mem lint --tree` now hunts. The reason was
+already stated in plain words; only the ID tail is removed. No behavior
+change.
+
+- **Migration:** none. `ledger-sync update` to 1.1.1; the vendored
+  `core/` rehashes (MANIFEST regen), memory untouched.
+
+---
+
 ## 1.1.0 — 2026-09-13
 
 **At-a-glance coordination, self-closing offices, compactable logs, and a
