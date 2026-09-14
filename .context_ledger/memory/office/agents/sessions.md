@@ -82,3 +82,13 @@ new group starts clean.
 - **Open items:** none
 - **Notes:** summary only
 - **Collab:** solo session (board empty at arrival); claim 20260912T153028Z-Ines-dd318463 → release 20260912T165533Z-Ines-14b82a1f
+
+## 2026-09-14 — Session 8
+- **Agent:** Zuri | **Model:** glm-5.3-flash | **Platform:** Windows 11 workstation (local, Git Bash) | **Role:** engineer | **Core:** 1.0.6 → 1.1.1
+- **Task:** supervisor PATCH — four coordinated protocol changes: roster Status/Status-detail columns for at-a-glance coordination; a full office auto-closes at the door past office_size (S020) with old-office session numbers never leaking into the fresh office; the append-only logs compact (clean sessions append nothing, resolved entries move verbatim to archive.md, 3+ repeats roll up) instead of hoarding; and one-way linkage enforced with `ledger-mem lint --tree` + a strip-on-sight rule
+- **Commits:** 12 (28ca963..5f74918) + this closeout
+- **Outcome:** done — core 1.1.0 released + self-hosted (four MINOR features, backward-compatible) then 1.1.1 PATCH (stripped a bug ID `B-2026-08-30-17` that a 1.1.0-enforced rule had left dangling in `ledger-sync`'s own comment). Roster: Status (`Working`/`Done`/`Blocked`) + Status detail, `ledger-mem check` warns on empty Status. Door trigger in both editions' Step 3/17, schema, AGENTS digest, kickoff, `ledger-history` status + pre-close checklist. Compaction: `ledger-mem prune` now covers `plans/decisions.md` + reports roll-up candidates; log templates + live office preambles refreshed; schema "compaction, not hoarding" subsection. `lint --tree` sweeps tracked product files (sh+ps1 parity verified). Suite 22 → 34, both ports; verify green (61 files); gates passed; this office's roster migrated to six columns.
+- **Open items:** none
+- **Notes:** summary only
+- **Model-label caveat:** my harness reports the model id as `…/qwen3.8-flash`; I recorded `glm-5.3-flash` to stay consistent with this office's fleet marker and my already-pushed roster row — flagged here so the supervisor can reconcile the convention if the raw harness id is wanted instead.
+- **Collab:** solo session (board empty at arrival — only my S008 row)

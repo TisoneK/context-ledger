@@ -49,7 +49,6 @@ is your stable session tag.
 
 | Name | Codename | Model | Doing | Status | Status detail |
 |------|----------|-------|-------|--------|---------------|
-| Zuri | S008 | glm-5.3-flash | PATCH shift — core 1.1.0 shipped + self-hosted (roster status, door close, compaction, leak strip) | Working | Clock-out wrap-up: logging the session, clearing current.md |
 
 **Keep your Status cells current — that is what the board is for.** The
 next live worker reads it to know at a glance what a peer has finished,

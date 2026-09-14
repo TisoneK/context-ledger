@@ -48,6 +48,14 @@ names them), and roll-up candidates.
 - **Suggested fix:** package: `ledger-collab emit release` could default `--paths` from the referenced claim (or refuse to emit a release that matches no claim) — the same condition that fails at integration would then fail at emit time, where it is cheap to fix. For the malformed event there is no in-protocol supersede; repaired by removing the never-referenced file with the supersession documented in the replacement release (git history keeps the original byte-for-byte).
 - **Status:** open — conduct miss named; release-defaults-paths is a tooling suggestion for a future patch.
 
+## 2026-09-14 — Zuri / glm-5.3-flash (Session 8)
+
+- **Flaw:** `ledger-mem prune`'s archive-eligibility heuristic over-matches. Its closed-marker regex (`superseded|RESOLVED|fixed in package|…`) scans every line of a segment, so it flags (a) the leading `## ADR-N`/log **template comment** (whose placeholder literally reads "superseded by ADR-M") and (b) any real entry whose body merely *mentions* the word — e.g. ADR-5, written to describe the compaction rule, contains "resolved/superseded entries move verbatim…". On the fresh core 1.1.0 `plans/decisions.md`, both live ADRs were reported "archive-eligible" though every one is `accepted`.
+- **Symptom:** `prune` reported 2 of 6 decisions archive-eligible; `--list` named the template comment + ADR-5. Acting on it would have wrongly archived a current ADR.
+- **Root cause:** keyword match against arbitrary body text + no exclusion of the seeded template comment block; the "closed" signal should be the entry's own `**Status:**` line, not any occurrence of the word.
+- **Suggested fix:** package (both `ledger-mem` + `.ps1`): scope the closed-marker to the entry's `**Status:**` line only (or `^-\s*\*\*Status:\*\*.*(superseded|resolved)`), and skip the `<!-- … -->` template preamble when segmenting so the `ADR-N` placeholder is never a candidate.
+- **Status:** open — advisory-only, so no data was at risk; logged as `Upstream: candidate` for a future PATCH to the prune heuristic.
+
 ## 2026-09-11 — Kai / glm-5.3-flash (Session 2, second addendum)
 
 - **Flaw:** my own staging mistake — my 1.0.0-closeout commit (01e76ac) used `git add .context_ledger/memory/` and swept an uncommitted leftover into the commit: Noor's (S003) roster row, which her clock-out (1b894f7) had already removed correctly. The board then showed a peer in the office who had left.

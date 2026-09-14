@@ -12,6 +12,6 @@ entry and backlog before starting.
 - **Status:** in-progress | done | blocked (<blocker>)
 -->
 
-- **Session:** 2026-09-13 — Zuri / glm-5.3-flash
-- **Task:** supervisor PATCH — roster Status + Status-detail columns; auto office close when the registry passes S020 with no old-office numbers leaking into the fresh office; shrink/group the append-only logs; strictly bar ledger vocabulary in product code and strip old leaks
-- **Status:** in-progress
+- **Session:** 2026-09-14 — Zuri / glm-5.3-flash
+- **Task:** none — core 1.1.0 + 1.1.1 shipped and self-hosted (roster Status board, door-triggered office close, append-only log compaction, one-way-linkage lint --tree + strip-on-sight); session closed
+- **Status:** idle

@@ -68,3 +68,12 @@ names them), and roll-up candidates.
 - **Cause:** network blip, not a protocol or tool issue.
 - **Workaround / fix:** retried the push; it succeeded at once.
 - **Prevent next time:** none needed — a transport-level push failure with an unchanged tree is retry-safe; if it had persisted, that is machine config for the supervisor, not something to work around.
+
+## 2026-09-14 — Zuri / glm-5.3-flash
+
+- **Problem:** three PowerShell / Git-Bash traps ate ~25 minutes while writing the ps1 mirrors. (1) `ledger-mem.ps1`'s roster-Status warning printed nothing under `check` — because the dispatcher does `$ok3 = Check-Roster`, which captures the function's entire success stream, swallowing every `Write-Output`/`Say`; only the `ErrLine` (stderr) DUP messages escaped. (2) Under `Set-StrictMode`, `@(& git ls-files) | Where-Object {…}` returns a scalar for a single file, so `.Count` threw. (3) Editing files through Git-Bash `<<EOF` heredocs silently collapsed `\\`→`\`, corrupting awk `printf "…\n"` string literals into real newlines (sh syntax error) and dropping backslashes from inserted code.
+- **Cost:** ~25 min: a debug pass with temporary `PROBE-F`/`PROBE-ROW` writes to localize the swallowed warning; two failed `sh -n`/ps1-parse cycles; three re-inserts of the test-suite block after backslash damage.
+- **Cause:** (1) PS output-stream capture semantics, not a rule I'd internalized; (2) StrictMode scalar-vs-array `.Count`; (3) the shell heredoc layer eating one level of backslash escaping before python/awk saw it.
+- **Workaround / fix:** (1) emit user-facing warnings from captured functions via `[Console]::Out.WriteLine`, not `Say` — documented in the tool comment and an ai-models observation; (2) wrap the whole `… | Where-Object` pipeline in `@()`; (3) build any needed backslash with `chr(92)` in the python editor, or avoid line-continuations in inserted shell blocks. Suite ended 34/34, sh/ps1 output verified identical on shared fixtures.
+- **Prevent next time:** the ai-models observation records both PS gotchas for the next session; the environments Quirks line now names the heredoc backslash-collapse and the `cp -R SRC DST`-into-existing-dir nesting (which bit the first scratch fixtures).
+- **Upstream: candidate** — the "warnings inside an assigned function are swallowed unless written to the console" rule is a recurring hazard for anyone authoring ps1 ports of these tools; a short note in the editions' sh/ps1-parity guidance (or a lint) would save the next author the same debug loop.
