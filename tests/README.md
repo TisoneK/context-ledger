@@ -13,7 +13,7 @@ Run it before every `core/` release — it exercises both editions (sh and
 PowerShell) on scratch projects, so a fix that works in one port but not
 the other fails here. Exit 0 = green.
 
-## What is covered (core 1.0.1)
+## What is covered (core 1.1.3)
 
 **The gate verdict** (`core/bin/ledger-gates{,.ps1}`) — the headline case
 is the flaw back-ported from a fleet project: a POSIX pipeline reports
@@ -30,6 +30,26 @@ used to pass with the tool under test failing.
   stages** (its verdict would be the last native command's exit code)
   and keeps single-native pipelines working (`Tee-Object` tails are
   safe: `$LASTEXITCODE` survives cmdlet stages).
+
+**Log compaction advisory** (`ledger-mem prune`, both ports) — a
+resolved entry and a superseded ADR report as archive-eligible, 3+
+entries sharing a Problem line report as a roll-up candidate, and the
+closed-marker counts **only** from an entry's own Status line: prose
+mentions and `<!-- -->` template comments never make an entry eligible
+(core 1.1.2).
+
+**One-way-linkage sweep** (`ledger-mem lint --tree`, both ports) —
+product leaks report with `file:line`, memory files and clean files
+stay out of the report (core 1.1.0).
+
+**UTF-8 encoding** (`ledger-sync.ps1`, ps1-only) — the office migration
+preserves non-ASCII in `history.conf`; the lock writer is byte-identical
+to the sh port (core 1.0.2).
+
+**Flaw harvesting** (`ledger-sync harvest`, sh-only command) — a scratch
+package clone reaches a sibling project checkout and collects one entry
+from each `memory/office/` log plus a root `[core-defect]` override —
+the office-era layout (core 1.1.3).
 
 The ps1 half of the suite runs only where a PowerShell engine is on
 PATH; elsewhere it is skipped with a notice.
