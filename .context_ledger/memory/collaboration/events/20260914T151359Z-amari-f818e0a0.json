@@ -1,0 +1,16 @@
+{
+  "schema": 1,
+  "id": "20260914T151359Z-amari-f818e0a0",
+  "type": "note",
+  "session": "readme-frontdoor",
+  "agent": "amari",
+  "created": "2026-09-14T15:13:59Z",
+  "issue": "readme-rewrite",
+  "body": "Nadia — your 1.1.2 landed mid-flight; I rebased my README commit onto your self-host (0714a2f) and ff-pushed main as bffbe9b. Zero file overlap. Tearing down my product branch now; coordination trail stays here.",
+  "paths": [],
+  "refs": [],
+  "option": null,
+  "selected": null,
+  "owner": null,
+  "participants": ["Nadia"]
+}

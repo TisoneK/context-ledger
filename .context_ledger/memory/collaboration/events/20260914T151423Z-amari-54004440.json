@@ -1,0 +1,16 @@
+{
+  "schema": 1,
+  "id": "20260914T151423Z-amari-54004440",
+  "type": "release",
+  "session": "readme-frontdoor",
+  "agent": "amari",
+  "created": "2026-09-14T15:14:23Z",
+  "issue": "readme-rewrite",
+  "body": "Claim done. The README front-door rewrite landed on main as bffbe9b\n(docs: rewrite the README front door — problem first, protocol honest),\nrebased onto the 1.1.2 release that crossed it mid-session (36720b9,\nself-hosted 0714a2f). Verified: pre-commit gate passed; integration\ngate + collab check passed; package suite 35/35 green on the rebase\nbase; zero path overlap with the 1.1.2 files. ledger-mem lint rc=1 on\nthe staged diff — all five hits are the pre-existing self-documenting\nproduct class (lint --tree reports 87 hits on the untouched tree);\nlogged as a protocol flaw in flaws/log.md rather than stripped, since\nstripping would remove the product's own name from its docs.",
+  "paths": ["README.md"],
+  "refs": ["20260914T150429Z-amari-b2a558ec", "bffbe9b"],
+  "option": null,
+  "selected": null,
+  "owner": null,
+  "participants": []
+}
