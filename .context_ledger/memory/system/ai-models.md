@@ -28,6 +28,7 @@ its work accordingly).
 | June | glm-5.3-flash | 2026-09-11 | 2026-09-11 | 1 |
 | Ines | glm-5.3-flash | 2026-09-12 | 2026-09-12 | 1 |
 | Zuri | glm-5.3-flash | 2026-09-14 | 2026-09-14 | 1 |
+| Amari | qwen3.8-flash | 2026-09-14 | 2026-09-14 | 1 |
 
 ## Observations
 

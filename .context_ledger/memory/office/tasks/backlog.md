@@ -43,6 +43,7 @@ Full spec: `.context_ledger/core/schemas/ledger-schema.md` →
 
 | ID | Summary |
 |----|---------|
+| B-2026-09-14-1 | Match the GitHub repo's About description to the README's new tagline — "Persistent, repository-native memory for AI coding agents — and the protocol that keeps it honest" — via `gh repo edit TisoneK/context-ledger --description "<...>"` or the web UI; exact wording is the supervisor's call (suggested by the S010 README rewrite). |
 
 <!-- TEMPLATE — add one row to the matching priority table:
 | B-<YYYY-MM-DD>-<n> | <enough context that a fresh agent can act on

@@ -52,6 +52,7 @@ Format: - <preference> — <how to apply it> (provenance, YYYY-MM-DD)
 ## Code style
 
 ## Review depth
+- An outside review handed to the agent (of the project or of its work) is input, not final say: apply own creative judgment on top, disagree where the review's calls are weak, and say so plainly rather than implementing it verbatim. (stated, 2026-09-14)
 
 ## Risk & approvals
 
