@@ -282,6 +282,12 @@ read stays cheap:
   Startup reads only the active log; the archive stays in git,
   grep-able. Manual cut-and-paste, never automatic — and only an
   explicit closed marker makes an entry eligible; age alone never does.
+  The marker is the entry's **own** `**Status:**` line carrying one of
+  those words — prose elsewhere in the entry is never the marker (an
+  accepted ADR *describing* the compaction rule mentions "superseded"
+  without being closed), and a file's `<!-- -->` template comment is
+  never a candidate (its placeholder Status lines carry the words
+  literally). `ledger-mem prune` follows exactly this scoping.
   An unresolved flaw stays in the active log: it is a live trap the next
   agent must see.
 - **Repeats roll up.** When a log holds 3+ entries describing the same

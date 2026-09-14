@@ -318,7 +318,11 @@ rm -rf "$HIST_SCRATCH"
 # ---- ledger-mem prune: log compaction reports (core 1.1.0) -------------------
 # prune stays advisory but must see all three compaction signals: a resolved
 # inefficiency entry and a superseded ADR are archive-eligible, and 3+ entries
-# sharing a Problem line surface as a roll-up candidate -- both ports.
+# sharing a Problem line surface as a roll-up candidate -- both ports. The
+# closed marker counts ONLY from an entry's own **Status:** line: prose that
+# merely mentions the words is not a marker, and a `<!-- -->` template
+# comment is never segmented at all (its placeholder Status lines carry the
+# words literally).
 PRUNE_SCRATCH=${TMPDIR:-/tmp}/ledger-test-prune
 rm -rf "$PRUNE_SCRATCH"
 mkdir -p "$PRUNE_SCRATCH/.context_ledger/core/bin" "$PRUNE_SCRATCH/.context_ledger/memory/office/flaws" "$PRUNE_SCRATCH/.context_ledger/memory/office/inefficiencies" "$PRUNE_SCRATCH/.context_ledger/memory/office/plans"
@@ -326,6 +330,11 @@ cp "$CORE/bin/ledger-mem" "$PRUNE_SCRATCH/.context_ledger/core/bin/ledger-mem"
 cp "$CORE/bin/ledger-mem.ps1" "$PRUNE_SCRATCH/.context_ledger/core/bin/ledger-mem.ps1"
 cat > "$PRUNE_SCRATCH/.context_ledger/memory/office/inefficiencies/log.md" <<FIXTURE1
 # Inefficiency Log
+<!-- TEMPLATE -- copy below the last entry:
+## YYYY-MM-DD -- T / m
+- **Flaw:** placeholder
+- **Status:** open | fixed in package <sha> | superseded by <something>
+-->
 ## 2026-09-01 -- A / m
 - **Problem:** flaky test on CI runner
 - **Status:** open
@@ -338,21 +347,46 @@ cat > "$PRUNE_SCRATCH/.context_ledger/memory/office/inefficiencies/log.md" <<FIX
 ## 2026-09-04 -- D / m
 - **Problem:** unrelated one-off
 - **Status:** RESOLVED -- installed psql
+## 2026-09-05 -- E / m
+- **Problem:** entry describing the compaction rule in prose
+- **Root cause:** resolved/superseded entries move verbatim to the archive, so mentions of them appear in accepted entries too
+- **Status:** open
 FIXTURE1
 cat > "$PRUNE_SCRATCH/.context_ledger/memory/office/plans/decisions.md" <<FIXTURE2
 # Decisions
-## ADR-1: use sh ports only (2026-09-01)
-- **Status:** superseded by ADR-2
-## ADR-2: keep both ports (2026-09-02)
+<!-- TEMPLATE:
+## D-N: <short title> (YYYY-MM-DD)
+- **Status:** accepted | superseded by D-M
+-->
+## D-1: use sh ports only (2026-09-01)
+- **Status:** superseded by D-2
+## D-2: keep both ports (2026-09-02)
+- **Context:** the compaction rule moves resolved and superseded entries to the archive
 - **Status:** accepted
 FIXTURE2
 
 sh "$PRUNE_SCRATCH/.context_ledger/core/bin/ledger-mem" prune > "$PRUNE_SCRATCH/.prune.log" 2>&1
-if grep -q "1 marked resolved/superseded" "$PRUNE_SCRATCH/.prune.log" && grep -q "roll-up: 3 entries hit the same recurring thing (flaky test on ci runner)" "$PRUNE_SCRATCH/.prune.log" && grep -q "plans/decisions.md" "$PRUNE_SCRATCH/.prune.log"; then
+if grep -q "1 marked resolved/superseded" "$PRUNE_SCRATCH/.prune.log" && grep -q "roll-up: 3 entries hit the same recurring thing (flaky test on ci runner)" "$PRUNE_SCRATCH/.prune.log" && grep -q "plans/decisions.md" "$PRUNE_SCRATCH/.prune.log" && grep -q "5 entries" "$PRUNE_SCRATCH/.prune.log" && grep -q "2 entries" "$PRUNE_SCRATCH/.prune.log"; then
   ok "prune: resolved entries + superseded ADR + 3-repeat roll-up all reported"
 else
   bad "prune: compaction reports incomplete"
   cat "$PRUNE_SCRATCH/.prune.log"
+fi
+# the closed-marker is scoped to **Status:** lines and skips template comments:
+# entry E mentions "resolved/superseded" in prose, accepted D-2 mentions them
+# too, and both template placeholders say "superseded" / "fixed in package".
+# None may be listed as eligible (--list names every candidate: D-2 resolved
+# entry, the superseded D-1, and the roll-up instance line — three bullets).
+sh "$PRUNE_SCRATCH/.context_ledger/core/bin/ledger-mem" prune --list > "$PRUNE_SCRATCH/.prune-list.log" 2>&1
+if [ "$(grep -c '^    - ' "$PRUNE_SCRATCH/.prune-list.log")" -eq 3 ] \
+   && ! grep -q "YYYY-MM-DD -- T" "$PRUNE_SCRATCH/.prune-list.log" \
+   && ! grep -q "D-N" "$PRUNE_SCRATCH/.prune-list.log" \
+   && ! grep -q "E / m" "$PRUNE_SCRATCH/.prune-list.log" \
+   && ! grep -q "D-2: keep" "$PRUNE_SCRATCH/.prune-list.log"; then
+  ok "prune: prose mentions + template comments are NOT archive-eligible"
+else
+  bad "prune: over-matches prose/template closed words"
+  cat "$PRUNE_SCRATCH/.prune-list.log"
 fi
 
 if [ -n "$PS_BIN" ]; then
@@ -362,7 +396,7 @@ if [ -n "$PS_BIN" ]; then
     PRUNE_PS_W=$PRUNE_SCRATCH/.context_ledger/core/bin/ledger-mem.ps1
   fi
   "$PS_BIN" -NoProfile -ExecutionPolicy Bypass -File "$PRUNE_PS_W" prune > "$PRUNE_SCRATCH/.prune-ps.log" 2>&1
-  if grep -q "1 marked resolved/superseded" "$PRUNE_SCRATCH/.prune-ps.log" && grep -q "roll-up: 3 entries hit the same recurring thing (flaky test on ci runner)" "$PRUNE_SCRATCH/.prune-ps.log" && grep -q "plans/decisions.md" "$PRUNE_SCRATCH/.prune-ps.log"; then
+  if grep -q "1 marked resolved/superseded" "$PRUNE_SCRATCH/.prune-ps.log" && grep -q "roll-up: 3 entries hit the same recurring thing (flaky test on ci runner)" "$PRUNE_SCRATCH/.prune-ps.log" && grep -q "plans/decisions.md" "$PRUNE_SCRATCH/.prune-ps.log" && grep -q "5 entries" "$PRUNE_SCRATCH/.prune-ps.log" && grep -q "2 entries" "$PRUNE_SCRATCH/.prune-ps.log"; then
     ok "prune ps1: same archive-eligible + roll-up signals reported"
   else
     bad "prune ps1: compaction reports incomplete or diverging"
