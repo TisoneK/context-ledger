@@ -43,7 +43,8 @@ usage() {
   say "          means the session never clocked out, and a duplicated"
   say "          Session N means a resumed session re-logged"
   say "  lint    .context_ledger vocabulary (ADR-N, bug IDs, .context_ledger/ paths) leaking"
-  say "          into the staged product diff"
+  say "          into product artifacts — the staged diff by default; --tree"
+  say "          sweeps every tracked product file (strip leaks old sessions left)"
   say "  prune   advise log compaction: each append-only durable log's size"
   say "          (flaws, inefficiencies, decisions), which entries are"
   say "          explicitly resolved/superseded (move them verbatim to the"
@@ -346,30 +347,70 @@ closeout() {
   say "Commit as: chore(ledger): close out finished backlog items"
 }
 
+# lint — .context_ledger vocabulary must never leak into product artifacts:
+# a product file (anything outside .context_ledger/) has to stand on its own
+# for someone who cloned only the product repo, so an ADR-N, a bug ID, a
+# ".context_ledger/" path, or "per ADR" in its source is a dangling pointer.
+# Default mode scans the STAGED diff (the new lines you're about to commit);
+# `--tree` sweeps every tracked file outside .context_ledger/ so leaks an old
+# session left behind become visible — strip them (a safe fix), then continue.
 lint() {
-  [ $# -eq 0 ] || { case "$1" in -h|--help) usage ;; *) die "unknown argument '$1'" ;; esac; }
+  _mode=staged
+  while [ $# -gt 0 ]; do
+    case "$1" in
+      --tree) _mode=tree; shift ;;
+      -h|--help) usage ;;
+      *) die "unknown argument '$1'" ;;
+    esac
+  done
   command -v git >/dev/null 2>&1 || die "lint needs git on PATH"
   _root=$(git -C "$PROJECT_DIR" rev-parse --show-toplevel 2>/dev/null) \
     || die "lint must run inside the project git repo"
-  git -C "$_root" diff --cached -U0 --no-color 2>/dev/null | awk '
-    /^\+\+\+ /{ f=$0; sub(/^\+\+\+ b\//, "", f); sub(/^\+\+\+ /, "", f); next }
-    /^\+/ && !/^\+\+\+/ {
-      if (f ~ /^\.context_ledger\// || f == "/dev/null") next
-      s = substr($0, 2)
-      pat = ""
-      if (s ~ /ADR-[0-9]/) pat = "an ADR reference"
-      else if (s ~ /B-[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9]/) pat = "a bug-ID reference"
-      else if (s ~ /\.context_ledger\//) pat = "a .context_ledger/ path"
-      else if (tolower(s) ~ /per adr/) pat = "\"per ADR\""
-      if (pat != "") { printf "LEAK: %s cites %s: %s\n", f, pat, s | "cat 1>&2"; n++ }
-    }
-    END { exit (n > 0) ? 1 : 0 }
-  '
-  _rc=$?
-  if [ "$_rc" -eq 0 ]; then
-    say "lint passed: no .context_ledger vocabulary (ADR-N, bug IDs, .context_ledger/ paths) in the staged product diff"
+  _rc=0
+  if [ "$_mode" = tree ]; then
+    # every tracked file outside .context_ledger/, one awk pass, file:line reported
+    _files=$(git -C "$_root" ls-files | grep -v '^\.context_ledger/' || true)
+    [ -n "$_files" ] || { say "lint passed: no tracked product files to sweep"; return 0; }
+    # cd to root so FNR/paths are repo-relative and files resolve
+    ( cd "$_root" && printf '%s\n' "$_files" \
+        | tr '\n' '\0' \
+        | xargs -0 awk '
+            {
+              s = $0
+              pat = ""
+              if (s ~ /ADR-[0-9]/) pat = "an ADR reference"
+              else if (s ~ /B-[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9]/) pat = "a bug-ID reference"
+              else if (s ~ /\.context_ledger\//) pat = "a .context_ledger/ path"
+              else if (tolower(s) ~ /per adr/) pat = "\"per ADR\""
+              if (pat != "") { printf "LEAK: %s:%d cites %s: %s\n", FILENAME, FNR, pat, s | "cat 1>&2"; n++ }
+            }
+            END { exit (n > 0) ? 1 : 0 }
+          ' ) || _rc=1
   else
-    err "lint failed: product code must stand on its own. State the reason in plain words in the docstring/comment; the ADR or bug-ID link belongs in .context_ledger/memory, not the source. Memory references code, never the reverse."
+    git -C "$_root" diff --cached -U0 --no-color 2>/dev/null | awk '
+      /^\+\+\+ /{ f=$0; sub(/^\+\+\+ b\//, "", f); sub(/^\+\+\+ /, "", f); next }
+      /^\+/ && !/^\+\+\+/ {
+        if (f ~ /^\.context_ledger\// || f == "/dev/null") next
+        s = substr($0, 2)
+        pat = ""
+        if (s ~ /ADR-[0-9]/) pat = "an ADR reference"
+        else if (s ~ /B-[0-9][0-9][0-9][0-9]-[0-9][0-9]-[0-9]/) pat = "a bug-ID reference"
+        else if (s ~ /\.context_ledger\//) pat = "a .context_ledger/ path"
+        else if (tolower(s) ~ /per adr/) pat = "\"per ADR\""
+        if (pat != "") { printf "LEAK: %s cites %s: %s\n", f, pat, s | "cat 1>&2"; n++ }
+      }
+      END { exit (n > 0) ? 1 : 0 }
+    '
+    _rc=$?
+  fi
+  if [ "$_rc" -eq 0 ]; then
+    if [ "$_mode" = tree ]; then
+      say "lint passed: no .context_ledger vocabulary (ADR-N, bug IDs, .context_ledger/ paths) in any tracked product file"
+    else
+      say "lint passed: no .context_ledger vocabulary (ADR-N, bug IDs, .context_ledger/ paths) in the staged product diff"
+    fi
+  else
+    err "lint failed: product code must stand on its own. State the reason in plain words in the docstring/comment; the ADR or bug-ID link belongs in .context_ledger/memory, not the source. Memory references code, never the reverse. Stripping a found leak is a safe fix — do it, then continue."
   fi
   return "$_rc"
 }

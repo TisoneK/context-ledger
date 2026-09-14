@@ -371,6 +371,71 @@ if [ -n "$PS_BIN" ]; then
 fi
 rm -rf "$PRUNE_SCRATCH"
 
+# ---- ledger-mem lint --tree: sweep old-session leaks (core 1.1.0) ------------
+# A leak an earlier session committed into product code is stripped on sight;
+# the --tree sweep finds it (the staged-diff lint can't). Scratch repo with one
+# product file leaking ADR-3 and a .context_ledger/ path, one clean file, and a
+# legitimate .context_ledger/memory file that must NOT be reported.
+LINT_SCRATCH=${TMPDIR:-/tmp}/ledger-test-lint
+rm -rf "$LINT_SCRATCH"
+mkdir -p "$LINT_SCRATCH/.context_ledger/core/bin" "$LINT_SCRATCH/.context_ledger/memory/plans" "$LINT_SCRATCH/src"
+cp "$CORE/bin/ledger-mem" "$LINT_SCRATCH/.context_ledger/core/bin/ledger-mem"
+cp "$CORE/bin/ledger-mem.ps1" "$LINT_SCRATCH/.context_ledger/core/bin/ledger-mem.ps1"
+printf 'def load():\n    return 1  # see ADR-3 for the cap\n' > "$LINT_SCRATCH/src/a.py"
+printf 'value = 2  # documented in .context_ledger/memory/plans/decisions.md\n' > "$LINT_SCRATCH/src/b.py"
+printf 'clean = 3  # no ledger vocabulary here\n' > "$LINT_SCRATCH/src/ok.py"
+printf 'ADR-3 is a memory file; it may reference itself.\n' > "$LINT_SCRATCH/.context_ledger/memory/plans/decisions.md"
+( cd "$LINT_SCRATCH" && git -c init.defaultBranch=main init -q && git add -A \
+  && git -c user.name=t -c user.email=t@t commit -q -m init )
+
+sh "$LINT_SCRATCH/.context_ledger/core/bin/ledger-mem" lint --tree > "$LINT_SCRATCH/.lint.log" 2>&1
+_lrc=$?
+if [ "$_lrc" -ne 0 ] \
+   && grep -q "src/a.py:2 cites an ADR reference" "$LINT_SCRATCH/.lint.log" \
+   && grep -q "src/b.py:1 cites a .context_ledger/ path" "$LINT_SCRATCH/.lint.log" \
+   && ! grep -q "src/ok.py" "$LINT_SCRATCH/.lint.log" \
+   && ! grep -q "memory/plans/decisions.md cites" "$LINT_SCRATCH/.lint.log"; then
+  ok "lint --tree: reports product leaks with file:line, skips .context_ledger + clean files"
+else
+  bad "lint --tree: wrong verdict or mis-scoped report"
+  cat "$LINT_SCRATCH/.lint.log"
+fi
+
+# a leak-free tree passes
+LINT_CLEAN=${TMPDIR:-/tmp}/ledger-test-lint-clean
+rm -rf "$LINT_CLEAN"
+mkdir -p "$LINT_CLEAN/.context_ledger/core/bin" "$LINT_CLEAN/src"
+cp "$CORE/bin/ledger-mem" "$LINT_CLEAN/.context_ledger/core/bin/ledger-mem"
+printf 'x = 1  # plain comment, nothing forbidden\n' > "$LINT_CLEAN/src/a.py"
+( cd "$LINT_CLEAN" && git -c init.defaultBranch=main init -q && git add -A \
+  && git -c user.name=t -c user.email=t@t commit -q -m init )
+if sh "$LINT_CLEAN/.context_ledger/core/bin/ledger-mem" lint --tree > "$LINT_CLEAN/.lint.log" 2>&1; then
+  ok "lint --tree: a leak-free product tree passes"
+else
+  bad "lint --tree: false positive on a clean tree"
+  cat "$LINT_CLEAN/.lint.log"
+fi
+
+if [ -n "$PS_BIN" ]; then
+  if command -v cygpath >/dev/null 2>&1; then
+    LINT_PS_W=$(cygpath -w "$LINT_SCRATCH/.context_ledger/core/bin/ledger-mem.ps1")
+  else
+    LINT_PS_W=$LINT_SCRATCH/.context_ledger/core/bin/ledger-mem.ps1
+  fi
+  "$PS_BIN" -NoProfile -ExecutionPolicy Bypass -File "$LINT_PS_W" lint --tree > "$LINT_SCRATCH/.lint-ps.log" 2>&1
+  if [ $? -ne 0 ] \
+     && grep -q "src/a.py:2 cites an ADR reference" "$LINT_SCRATCH/.lint-ps.log" \
+     && grep -q "src/b.py:1 cites a .context_ledger/ path" "$LINT_SCRATCH/.lint-ps.log" \
+     && ! grep -q "src/ok.py" "$LINT_SCRATCH/.lint-ps.log" \
+     && ! grep -q "memory/plans/decisions.md cites" "$LINT_SCRATCH/.lint-ps.log"; then
+    ok "lint --tree ps1: same report and scoping as the sh port"
+  else
+    bad "lint --tree ps1: wrong verdict or mis-scoped report"
+    cat "$LINT_SCRATCH/.lint-ps.log"
+  fi
+fi
+rm -rf "$LINT_SCRATCH" "$LINT_CLEAN"
+
 # ---- UTF-8 encoding (core 1.0.2) --------------------------------------------
 # Windows PowerShell 5.1 reads BOM-less files in the ANSI codepage unless
 # -Encoding UTF8 is passed. The office migration rewrote history.conf through
