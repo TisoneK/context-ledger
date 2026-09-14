@@ -1,61 +1,154 @@
-# .context_ledger — AI Engineering Protocol
+# Context Ledger
 
-A reusable protocol package for running AI agents against a codebase,
-built around a **two-zone `.context_ledger/` directory** committed to every
-project:
+**Persistent, repository-native memory for AI coding agents — and the
+protocol that keeps it honest.**
 
-- **`.context_ledger/core/`** — this package's `core/` tree, **vendored** into
-  the project: the protocol editions, roles, schemas, templates, and the
-  `ledger-sync` tool. Read-only, version-stamped, checksummed. The
-  protocol travels with the repo — after bootstrap, no session (local or
-  cloud) needs this package, a clone, or a package PAT.
-- **`.context_ledger/memory/`** — the project's living memory: sessions, tasks,
-  decisions, friction logs, user preferences, machine records. Writable,
-  project-owned, never touched by sync.
+## The gap in the stack
 
-Every session starts by reading `.context_ledger/` and ends by updating
-`memory/`, so any agent — any model, any machine — knows what every
-prior agent did, what's open, what's decided, and what went wrong before.
+A codebase accumulates history tools. Git remembers the **code**
+history. The issue tracker remembers the **ticket** history. The docs
+remember the **knowledge** history. Nothing remembers the **operational
+context between agent sessions**: what was investigated, what was
+decided and *why*, what is deliberately unfinished, which approach
+already failed, what the last agent learned about the user or the
+machine.
 
-## Contents
+So the next agent — a different model, a different machine, a fresh
+context window — starts as a stranger. You become the message bus
+between your own sessions, re-explaining state the project already
+knows.
 
-| Path | What it is |
+## The fix
+
+Context Ledger makes the repository itself the memory. Every project
+carries a `.context_ledger/` directory with two zones — a versioned
+**core** (the protocol agents follow) and a living **memory** (what the
+agents actually did) — committed to git, updated in the same pushes as
+the code. One rule runs every session:
+
+> **Start by reading the ledger. Finish by updating it.**
+
+Different agent. Different model. Different machine. Same project
+memory.
+
+## A session, concretely
+
+```text
+SESSION 1 — Tuesday, model A
+  reads .context_ledger/kickoff.md → sessions, tasks, decisions, logs
+  investigates a timezone bug; fixes half of it
+  a schema trade-off forces a decision → recorded as an ADR
+  clock-out: session logged, two open tasks queued, one test-harness
+  trap noted, everything committed and pushed
+
+SESSION 2 — Wednesday, model B, different laptop
+  reads the same files → knows where the work stands in a minute
+  skips the trap model A already mapped, continues the other half
+  never asks the user to re-explain anything
+```
+
+## What it is not
+
+This is not another chat-history summarizer or a vector store bolted
+onto an agent. The difference is structural:
+
+- **Memory is plain markdown in git.** Human-readable session logs,
+  ADRs, a task queue, friction logs — diffable in a pull request,
+  versioned with the code, reviewable with the same tools that review
+  the code. No server, no embeddings, nothing to run.
+- **Memory has discipline.** Agents don't just append notes. Every
+  session checks in at a roster (who's in the office *now*), claims
+  scope before editing, runs lifecycle gates before committing, and
+  clocks out — so the ledger stays current instead of rotting into
+  stale documentation. Concurrent agents coordinate through immutable
+  event records, like coworkers, not like writers racing over one file.
+- **The protocol travels inside the project.** It is *vendored* at
+  bootstrap — a fresh clone carries the complete operating manual for
+  its agents. After bootstrap, no session needs a GitHub account, a
+  clone of anything, or the network: there is no runtime dependency to
+  break.
+- **It remembers failure, not just success.** Two friction logs keep
+  what went wrong — project traps agents hit, and flaws in the
+  protocol itself. The second flows back to the package and ships as
+  new releases: the protocol was shaped by the agents that used it.
+
+## What the ledger remembers
+
+```text
+memory/
+├── office/                  # the live office — everything the current
+│   │                        #   set of sessions produces
+│   ├── agents/sessions.md   # who did what, which model, which machine
+│   ├── agents/roster.md     # the board by the door: who's working now
+│   ├── tasks/               # current.md (in flight) + backlog.md (queue)
+│   ├── plans/decisions.md   # ADRs — why things are the way they are
+│   ├── flaws/               # friction with the protocol → flows upstream
+│   ├── inefficiencies/      # friction with the project → traps to avoid
+│   ├── sessions/            # per-session notes + compressed summary
+│   └── reviews/             # each session's report
+├── system/                  # machines + agent/model pairs, verified commands
+├── user/                    # who the user is and how they like things done
+├── workflows/               # standing session parameters + gate registry
+└── collaboration/           # immutable peer-coordination events (opt-in)
+```
+
+Offices have a capacity: when one fills up it is frozen verbatim into
+`history/` with a permanent accomplishments record, and a fresh office
+opens — memory that bounds itself instead of growing to unreadable.
+
+## The two zones
+
+```text
+.context_ledger/
+├── kickoff.md      # THE FRONT DOOR — every session starts here
+├── core/           # the protocol, vendored — READ-ONLY, version-stamped,
+│   │               #   checksummed; replaced only as a whole tree
+│   ├── rules/      # two editions: local IDE agents · cloud/sandbox agents
+│   ├── schemas/    # the single source of truth on every memory file format
+│   ├── roles/      # mission overlays (reviewer, security-auditor, docs-agent…)
+│   └── bin/        # ledger-sync · ledger-collab · ledger-gates ·
+│                   #   ledger-mem · ledger-history (sh + PowerShell ports)
+└── memory/         # the project's living memory — project-owned, writable,
+                    #   never touched by protocol updates
+```
+
+## Getting started
+
+The tools are pure POSIX sh with PowerShell ports — no installation,
+no dependencies, no package manager. On Windows, every `.ps1` has a
+`.cmd` launcher that needs no execution-policy setup.
+
+```bash
+git clone https://github.com/TisoneK/context-ledger.git
+sh context-ledger/core/bin/ledger-sync bootstrap path/to/your-project
+# in that project: git add .context_ledger AGENTS.md, commit, push
+```
+
+Or skip the CLI: hand [`universal-kickoff.md`](universal-kickoff.md) to
+any agent and say "bootstrap this project" — it runs the same steps and
+fills in the first memory. From then on, every session on that project
+starts with one sentence to the agent:
+
+> Read `.context_ledger/kickoff.md` and follow it.
+
+It has run in production on the maintainer's fleet — several real
+projects plus this repo itself, which uses its own protocol to develop
+its own protocol.
+
+## Where to go next
+
+| Read | What it is |
 |---|---|
-| [`core/`](core/) | **The vendorable tree** — exactly what lands in each project as `.context_ledger/core/`. |
-| [`core/rules/`](core/rules/) | The two protocol editions: [`ai-engineering-protocol-local.md`](core/rules/ai-engineering-protocol-local.md) (IDE agents — user's git credentials, no PAT) and [`ai-engineering-protocol.md`](core/rules/ai-engineering-protocol.md) (cloud/sandbox agents — clone + PAT). Selection is **by agent type at session start, never by memory** (Pitfall #43). |
-| [`core/schemas/`](core/schemas/) | [`ledger-schema.md`](core/schemas/ledger-schema.md) — the **single source of truth** on every `.context_ledger/` file: zone, write mode, fact scope (project / agent-type / machine / agent-model / user), the overrides contract, the weak-agent translation layer, and the sync/fallback model. Plus a machine-readable [`ledger.schema.json`](core/schemas/ledger.schema.json). |
-| [`core/templates/`](core/templates/) | What projects are generated from: the `memory/` skeleton, [`kickoff.md`](core/templates/kickoff.md) (the in-repo front door), [`ledger-README.md`](core/templates/ledger-README.md) (zone map), [`AGENTS.md`](core/templates/AGENTS.md) (root discovery digest for agents that never read a 900-line edition). |
-| [`core/roles/`](core/roles/) | Role overlays — reviewer (read-only), security-auditor, docs-agent, feature-engineer. Engineer (full-scope) is the default, no overlay needed. |
-| [`core/bin/ledger-sync`](core/bin/ledger-sync) | POSIX-sh tool: `status` (startup change detection), `verify` (checksums vs `MANIFEST.sha256`), `update` (semver-gated whole-tree core replacement — memory untouched), `rollback` (restore the last-known-good core from git history), `bootstrap` (initialize a project), `manifest` (release tool). |
-| [`core/bin/ledger-sync.ps1`](core/bin/ledger-sync.ps1) | PowerShell port for **Windows** agents (no POSIX shell): the session commands `status` / `verify` / `update` / `rollback` / `lock`. Shares `MANIFEST.sha256` with the sh tool (identical hashes). `manifest` / `bootstrap` / `harvest` stay sh-only. A `.cmd` launcher sits beside every `.ps1` port and runs it with `-ExecutionPolicy Bypass`, so Windows agents need no policy setup. |
-| [`core/bin/ledger-collab`](core/bin/ledger-collab) + [`ledger-collab.ps1`](core/bin/ledger-collab.ps1) | POSIX/PowerShell helpers for opt-in peer collaboration: atomically emit immutable events, inspect live overlap, and run the integration-readiness `check` gate. |
-| [`core/bin/ledger-gates`](core/bin/ledger-gates) + [`ledger-gates.ps1`](core/bin/ledger-gates.ps1) | Explicit lifecycle gates: per-turn checkpoints, pre-commit, integration, and exit commands using project-owned `memory/workflows/gates.conf`. |
-| [`core/VERSION`](core/VERSION) + [`core/CHANGELOG.md`](core/CHANGELOG.md) | Core semver + one entry per release with migration notes. |
-| [`universal-kickoff.md`](universal-kickoff.md) | **One-time bootstrap bootloader** — hand to the agent for a project's first-ever session. It vendors core into the project and generates the real entry points; every later session starts from the project's own `.context_ledger/kickoff.md`. |
-| [`MIGRATION.md`](MIGRATION.md) | Moving pre-0.2.0 projects (flat `.context_ledger/`, sibling-clone protocol) to the two-zone layout — one commit, zero data loss. |
-| [`flaws/`](flaws/) | **Consolidated workflow flaws** — friction agents hit with the protocol/`.context_ledger/` system itself, back-ported from all projects. The source of truth for protocol improvements. |
-| [`examples/localmind-review.md`](examples/localmind-review.md) | Example session deliverable — a real review report produced under the protocol. |
-| [`QUICKSTART.md`](QUICKSTART.md) | The mental model + bootstrap steps. Start here if you're new. |
-| [`MVP.md`](MVP.md) | Public-release plan + feature roadmap — the single home for advanced/future feature ideas. |
-
-## Usage
-
-1. **Bootstrap (once per project):** fill [`universal-kickoff.md`](universal-kickoff.md)'s
-   Pre-Flight and hand it to any agent — or run it yourself:
-   ```bash
-   sh core/bin/ledger-sync bootstrap <path-to-project-repo>
-   ```
-2. **Every session after that:** tell any agent
-   *"Read `.context_ledger/kickoff.md` and follow it."* It routes by agent
-   type to the right edition inside the vendored core. Optionally add
-   one role overlay from `core/roles/` — where the role file and the
-   edition conflict, the role file wins.
-3. **Core updates (optional, any later session):**
-   `sh .context_ledger/core/bin/ledger-sync status` at session start reports
-   drift; same-MAJOR updates apply with `update` (memory is never
-   touched), MAJOR bumps wait for the user. Corrupt or hand-edited
-   core? `verify` catches it, `rollback` restores the version recorded
-   in `memory/core.lock`.
+| [`QUICKSTART.md`](QUICKSTART.md) | The mental model + bootstrap walkthrough — start here if the picture above clicked. |
+| [`core/rules/`](core/rules/) | The protocol editions — the full session lifecycle. |
+| [`core/schemas/ledger-schema.md`](core/schemas/ledger-schema.md) | The format of every memory file: zones, write modes, fact scopes. |
+| [`universal-kickoff.md`](universal-kickoff.md) | The one-time bootloader, for a project's first-ever session. |
+| [`designs/`](designs/) | Design documents behind the big moves (office architecture, collaboration events, session grouping). |
+| [`MVP.md`](MVP.md) | Public-release plan + feature roadmap — the single home for future ideas. |
+| [`MIGRATION.md`](MIGRATION.md) | Moving pre-0.2.0 projects to the two-zone layout — one commit, zero data loss. |
+| [`examples/localmind-review.md`](examples/localmind-review.md) | A real session report produced under the protocol. |
+| [`flaws/`](flaws/) | Consolidated protocol friction, back-ported from every project — the source of improvements. |
+| [`core/CHANGELOG.md`](core/CHANGELOG.md) | Release history of the protocol itself, with migration notes. |
 
 ## Working on this repo (the package as the session's target)
 
@@ -94,40 +187,6 @@ until it ships. MAJOR bumps still require the user's go-ahead
 Fixes reach projects through **their own** next sessions —
 `ledger-sync update` for core, regeneration for generated files — or
 through the user relaying it. The maintainer session never commits into
-another project's `.context_ledger/`, however obvious the fix: those repos
-have their own agents, their own session logs, and their own locks.
+another project's `.context_ledger/`, however obvious the fix: those
+repos have their own agents, their own session logs, and their own locks.
 Fix the source; let the instances pull.
-
-## Design rules (the short version)
-
-- **Two zones, one direction:** core is replaced whole from the package
-  and never hand-edited in a project; memory is project-owned and never
-  synced. Protocol learnings flow project → `memory/office/flaws/log.md` →
-  this repo → the next core release.
-- **Append-only logs stay append-only** — `sessions.md`, both friction
-  logs, `decisions.md`. Corrections are appended, never edited in.
-  (`tasks/backlog.md` is the one live queue: open work only — delete a
-  line when its item is done; history is the session log + git.)
-- **No secrets in tracked files** — values live only in
-  `memory/secrets/`, a self-gitignored local-only module.
-- **Fact scoping beats contamination** — edition by agent type,
-  environment blocks by "Identify by" match, credential flows
-  cloud-only. The schema states the rules; Pitfall #43 enforces them.
-- **`chore(ledger):`** for memory commits; **`docs(review):`** for
-  reports.
-- **Inefficiency logging is mandatory** — friction you absorb silently
-  is friction the next agent hits blind.
-- **Session data is disposable** — detailed session notes live in
-  `memory/office/sessions/` and can be deleted when no longer useful; the
-  permanent record is `agents/sessions.md`. Durable facts are promoted
-  to their domain before disposal — permanent context must never depend
-  exclusively on an individual session.
-- **Collaboration is opt-in, and peers are coworkers, not rivals** —
-  concurrent agents use isolated worktrees/branches and immutable
-  one-file-per-event records under `memory/collaboration/events/`. The
-  everyday move is an informal `note` (the office channel); the common
-  lifecycle is `note` + `claim`/`release`. Only a genuine conflict (same
-  paths, incompatible changes) escalates to evidence-based peer assessment
-  and an agreement naming the best option and one owner.
-- **Verify before trusting** — if `.context_ledger/` contradicts the codebase,
-  the codebase wins; append a correction.
