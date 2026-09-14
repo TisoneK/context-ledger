@@ -2,7 +2,7 @@
 
 This directory is where workflow-level flaws observed across **all
 projects** using this protocol are consolidated. Each project's
-`.context_ledger/flaws/log.md` is the source of truth for that project; this
+`.context_ledger/memory/office/flaws/log.md` is the source of truth for that project; this
 directory is where patterns are back-ported so the protocol package
 itself can be improved.
 
@@ -10,7 +10,7 @@ itself can be improved.
 
 ```
 Project session hits a workflow flaw
-  → logged in the project's .context_ledger/memory/flaws/log.md (Status: open)
+  → logged in the project's .context_ledger/memory/office/flaws/log.md (Status: open)
   → ledger-sync harvest collects it here (into ../inbox/) — see below
   → protocol/core/roles updated in this package to fix it
   → the project's flaw entry gets a "Fixed in package" line
@@ -24,9 +24,9 @@ now `ledger-sync harvest`, run from a package clone. It reads `fleet.md`
 (the registry of bootstrapped projects), reaches each one read-only (a
 sibling clone matched by remote URL, else a shallow clone), and pulls in:
 
-- **`flaws/log.md`** entries with `Status: open` — every flaw is
+- **`memory/office/flaws/log.md`** entries with `Status: open` — every flaw is
   protocol-level by definition, so all open ones are candidates;
-- **`inefficiencies/log.md`** entries marked `Upstream: candidate` —
+- **`memory/office/inefficiencies/log.md`** entries marked `Upstream: candidate` —
   most inefficiencies are project-local and stay put; this opt-in marks
   the protocol-level ones;
 - **`overrides/rules.md`** bullets tagged `[core-defect]` — these are the
@@ -62,7 +62,7 @@ then delete the run file — the ledger remembers.
 - **Symptom:** <what happened to the agent — the observable friction>
 - **Root cause:** <why the protocol/.context_ledger/ let this happen>
 - **Suggested fix:** <concrete change to the package>
-- **Source:** <project repo> — .context_ledger/flaws/log.md, Session N
+- **Source:** <project repo> — .context_ledger/memory/office/flaws/log.md, Session N
 - **Status:** open | fixed in <commit-sha> on <date>
 ```
 
