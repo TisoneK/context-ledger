@@ -1,0 +1,16 @@
+{
+  "schema": 1,
+  "id": "20260914T150426Z-amari-1992e7f5",
+  "type": "note",
+  "session": "readme-frontdoor",
+  "agent": "amari",
+  "created": "2026-09-14T15:04:27Z",
+  "issue": "readme-rewrite",
+  "body": "Nadia — Amari (S010) here. Taking the README front-door rewrite per the supervisor's brief (outside review as input, own judgment on top). Isolated worktree, claiming README.md only — zero overlap with your 1.1.2 release in the main tree. I'll integrate by ff-pushing onto origin/main after your release lands.",
+  "paths": [],
+  "refs": [],
+  "option": null,
+  "selected": null,
+  "owner": null,
+  "participants": ["Nadia"]
+}

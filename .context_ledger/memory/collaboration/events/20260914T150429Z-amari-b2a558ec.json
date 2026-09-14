@@ -1,0 +1,16 @@
+{
+  "schema": 1,
+  "id": "20260914T150429Z-amari-b2a558ec",
+  "type": "claim",
+  "session": "readme-frontdoor",
+  "agent": "amari",
+  "created": "2026-09-14T15:04:29Z",
+  "issue": "readme-rewrite",
+  "body": "Scope: README.md only (repo root, product surface).\n\nContext: the supervisor supplied an outside review of the README's\nfirst-impression problem (architecture-first opening, encyclopedia\nContents table on screen one) and asked for a front-door rewrite using\nthat review as input, not gospel. The rewrite leads with the\nagent-amnesia problem and the read/update session rule, keeps the\n\"Working on this repo\" section verbatim in title (kickoff.md and\nworkflows/active.md point at it by name), and preserves every\nmaintainer-discipline fact (manifest regen, suite, self-hosting,\none-workstream rule).\n\nSafety: no overlap with the 1.1.2 release in flight in the main tree\n(core/VERSION, core/CHANGELOG.md, core/MANIFEST.sha256). Integration\nplan: fast-forward push onto origin/main after the release lands;\nrebase if it moved.",
+  "paths": ["README.md"],
+  "refs": [],
+  "option": null,
+  "selected": null,
+  "owner": null,
+  "participants": []
+}
