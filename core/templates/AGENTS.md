@@ -93,7 +93,12 @@ If you read nothing else, obey these rules:
 6. **Know which kind of file you're in.** *Append-only* logs
    (`office/agents/sessions.md`, `office/plans/decisions.md`,
    `office/flaws/log.md`, `office/inefficiencies/log.md`) grow at the bottom — never edit
-   or delete past entries. `office/tasks/backlog.md` is a live queue
+   or delete past entries. They also never grow without bound — compact
+   them: a clean session appends nothing to the friction logs; entries
+   explicitly marked `RESOLVED`/`superseded`/fixed move verbatim into the
+   log's `archive.md`; 3+ entries hitting the same recurring thing roll up
+   into one `Recurring` entry (instances archived verbatim);
+   `ledger-mem prune` reports all three. `office/tasks/backlog.md` is a live queue
    arranged as priority-grouped tables: add each open item as a row in
    its priority table (High/Medium/Low, `ID | Summary`), delete the row
    when its item is finished (the completion record is the session

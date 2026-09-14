@@ -44,9 +44,13 @@ usage() {
   say "          Session N means a resumed session re-logged"
   say "  lint    .context_ledger vocabulary (ADR-N, bug IDs, .context_ledger/ paths) leaking"
   say "          into the staged product diff"
-  say "  prune   advise archiving resolved/superseded entries out of the"
-  say "          append-only durable logs (flaws, inefficiencies); --list"
-  say "          names them. Never moves or deletes — reports only."
+  say "  prune   advise log compaction: each append-only durable log's size"
+  say "          (flaws, inefficiencies, decisions), which entries are"
+  say "          explicitly resolved/superseded (move them verbatim to the"
+  say "          log's archive.md), and which logs hold 3+ entries hitting"
+  say "          the same recurring thing (roll up into one Recurring entry,"
+  say "          instances archived verbatim); --list names them. Never"
+  say "          moves or deletes — reports only."
   say "  closeout delete finished backlog items (- [x] tombstones) from the"
   say "          tasks/backlog.md live queue — open work stays. Dry run by"
   say "          default (lists the tombstones); --confirm deletes. Every"
@@ -217,12 +221,14 @@ check_dup_sessions() {
   return 0
 }
 
-# prune — advise archiving resolved history out of the append-only durable
-# logs so startup stops re-reading cold, closed entries. It NEVER moves or
-# deletes anything (that stays a human/agent edit); it reports how large each
-# log is and which entries are explicitly marked resolved/superseded/fixed —
-# the archive-eligible ones. Move those to a companion archive.md (still
-# grep-able); the active log is what startup reads. Age alone is never a
+# prune — advise log compaction out of the append-only durable logs so
+# startup stops re-reading cold, closed entries and repeated friction. It
+# NEVER moves or deletes anything (that stays a human/agent edit); it
+# reports, per log (flaws, inefficiencies, decisions): the log's size, the
+# entries explicitly marked resolved/superseded/fixed (move those verbatim
+# to a companion archive.md, still grep-able), and logs holding 3+ entries
+# with the same normalized Problem/Flaw line (roll them up into one
+# Recurring entry, instances archived verbatim). Age alone is never a
 # reason to archive — only an explicit closed marker is.
 prune() {
   _list=0
@@ -235,20 +241,40 @@ prune() {
   done
   [ -d "$MEMORY_DIR" ] || { say "ledger-mem: no memory dir (nothing to prune)"; return 0; }
   _eligible=0
-  for _rel in flaws/log.md inefficiencies/log.md; do
+  for _rel in flaws/log.md inefficiencies/log.md plans/decisions.md; do
     _f=$OFFICE_DIR/$_rel
     [ -f "$_f" ] || continue
     awk -v rel="$_rel" -v list="$_list" '
-      function flush() { if (inseg && closed) { c++; cand[c] = heading } }
-      /^## / { flush(); inseg = 1; closed = 0; heading = $0; total++; next }
+      function norm(s) {
+        s = tolower(s)
+        gsub(/[[:space:]]+/, " ", s)
+        sub(/[[:space:]]+$/, "", s)
+        return s
+      }
+      function flush() {
+        if (inseg && closed) { c++; cand[c] = heading }
+        if (fp != "") { fpseen[fp]++; fpwhere[fp] = fpwhere[fp] " || " heading }
+      }
+      /^## / {
+        flush(); inseg = 1; closed = 0; heading = $0; total++; fp = ""; next
+      }
       inseg && /RESOLVED|[Ss]uperseded|[Ff]ixed in package|no longer (a )?(flaw|issue)/ { closed = 1 }
+      inseg && fp == "" && /^[[:space:]]*[-*]?[[:space:]]*\*\*(Problem|Flaw):\*\*/ {
+        fp = $0
+        sub(/^[[:space:]]*[-*]?[[:space:]]*\*\*(Problem|Flaw):\*\*[[:space:]]*/, "", fp)
+        fp = norm(fp)
+      }
       END {
         flush()
         printf "%s — %d entries (%d lines); %d marked resolved/superseded → archive-eligible.\n", rel, total, NR, c
+        dir = rel; sub(/[^\/]*$/, "", dir)
         if (c > 0) {
-          dir = rel; sub(/[^\/]*$/, "", dir)
           printf "  move the resolved entries to %sarchive.md; startup then reads only the active log.\n", dir
           if (list == 1) for (i = 1; i <= c; i++) printf "    - %s\n", cand[i]
+        }
+        for (k in fpseen) if (fpseen[k] >= 3) {
+          printf "  roll-up: %d entries hit the same recurring thing (%.70s) — append one Recurring entry, move the instances to %sarchive.md.\n", fpseen[k], k, dir
+          if (list == 1) printf "    - %s\n", fpwhere[k]
         }
         exit (c > 0) ? 10 : 0
       }

@@ -40,8 +40,13 @@ function Usage {
     '          Session N means a resumed session re-logged',
     '  lint    .context_ledger vocabulary (ADR-N, bug IDs, .context_ledger/ paths) leaking',
     '          into the staged product diff',
-    '  prune   advise archiving resolved/superseded entries out of the',
-    '          append-only durable logs; --list names them. Reports only.',
+    '  prune   advise log compaction: each append-only durable log''s size',
+    '          (flaws, inefficiencies, decisions), which entries are',
+    '          explicitly resolved/superseded (move them verbatim to the',
+    "          log's archive.md), and which logs hold 3+ entries hitting",
+    '          the same recurring thing (roll up into one Recurring entry,',
+    "          instances archived verbatim); --list names them. Never",
+    '          moves or deletes - reports only.',
     '  closeout delete finished backlog items (- [x] tombstones) from the',
     '          tasks/backlog.md live queue - open work stays. Dry run by',
     '          default (lists the tombstones); --confirm deletes. Every',
@@ -263,28 +268,49 @@ function Invoke-Prune {
   param([bool]$List)
   if (-not (Test-Path -LiteralPath $memoryDir)) { Say 'ledger-mem: no memory dir (nothing to prune)'; return }
   $eligible = $false
-  foreach ($rel in @('flaws/log.md', 'inefficiencies/log.md')) {
+  foreach ($rel in @('flaws/log.md', 'inefficiencies/log.md', 'plans/decisions.md')) {
     $f = Join-Path $officeDir $rel
     if (-not (Test-Path -LiteralPath $f)) { continue }
-    $total = 0; $lines = 0; $inseg = $false; $closed = $false; $heading = ''; $cand = @()
+    $total = 0; $lines = 0
+    $segs = @()
+    $inseg = $false; $closed = $false; $heading = ''; $fp = ''
     foreach ($raw in Get-Content -Encoding UTF8 -LiteralPath $f) {
       $lines++
       $line = $raw.TrimEnd("`r")
       if ($line -match '^## ') {
-        if ($inseg -and $closed) { $cand += $heading }
-        $inseg = $true; $closed = $false; $heading = $line; $total++
+        if ($inseg) { $segs += [pscustomobject]@{ Heading = $heading; Closed = $closed; Fp = $fp } }
+        $inseg = $true; $closed = $false; $heading = $line; $total++; $fp = ''
         continue
       }
       if ($inseg -and ($line -match 'RESOLVED|[Ss]uperseded|[Ff]ixed in package|no longer (a )?(flaw|issue)')) { $closed = $true }
+      if ($inseg -and $fp -eq '' -and $line -match '^[ ]*[-*]?[ ]*[*][*](Problem|Flaw):[*][*][ ]*(.+)$') {
+        $t = $Matches[2].Trim().ToLower().Replace("`t", ' ')
+        while ($t.Contains('  ')) { $t = $t.Replace('  ', ' ') }
+        $fp = $t
+      }
     }
-    if ($inseg -and $closed) { $cand += $heading }
+    if ($inseg) { $segs += [pscustomobject]@{ Heading = $heading; Closed = $closed; Fp = $fp } }
+    $cand = @($segs | Where-Object { $_.Closed } | ForEach-Object { $_.Heading })
     $c = $cand.Count
+    $fpseen = @{}; $fpwhere = @{}
+    foreach ($seg in $segs) {
+      if ($seg.Fp -eq '') { continue }
+      if ($fpseen.ContainsKey($seg.Fp)) { $fpseen[$seg.Fp]++; $fpwhere[$seg.Fp] += (' || ' + $seg.Heading) }
+      else { $fpseen[$seg.Fp] = 1; $fpwhere[$seg.Fp] = (' || ' + $seg.Heading) }
+    }
     Say ('{0} - {1} entries ({2} lines); {3} marked resolved/superseded -> archive-eligible.' -f $rel, $total, $lines, $c)
+    $dir = $rel -replace '[^/]*$', ''
     if ($c -gt 0) {
-      $dir = $rel -replace '[^/]*$', ''
       Say ('  move the resolved entries to {0}archive.md; startup then reads only the active log.' -f $dir)
       if ($List) { foreach ($h in $cand) { Say ('    - {0}' -f $h) } }
       $eligible = $true
+    }
+    foreach ($k in $fpseen.Keys) {
+      if ($fpseen[$k] -ge 3) {
+        $short = $k; if ($short.Length -gt 70) { $short = $short.Substring(0, 70) }
+        Say ('  roll-up: {0} entries hit the same recurring thing ({1}) - append one Recurring entry, move the instances to {2}archive.md.' -f $fpseen[$k], $short, $dir)
+        if ($List) { Say ('    - {0}' -f $fpwhere[$k]) }
+      }
     }
   }
   if ($eligible) {

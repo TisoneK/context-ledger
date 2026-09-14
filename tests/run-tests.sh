@@ -315,6 +315,62 @@ if [ -n "$PS_BIN" ]; then
 fi
 rm -rf "$HIST_SCRATCH"
 
+# ---- ledger-mem prune: log compaction reports (core 1.1.0) -------------------
+# prune stays advisory but must see all three compaction signals: a resolved
+# inefficiency entry and a superseded ADR are archive-eligible, and 3+ entries
+# sharing a Problem line surface as a roll-up candidate -- both ports.
+PRUNE_SCRATCH=${TMPDIR:-/tmp}/ledger-test-prune
+rm -rf "$PRUNE_SCRATCH"
+mkdir -p "$PRUNE_SCRATCH/.context_ledger/core/bin" "$PRUNE_SCRATCH/.context_ledger/memory/office/flaws" "$PRUNE_SCRATCH/.context_ledger/memory/office/inefficiencies" "$PRUNE_SCRATCH/.context_ledger/memory/office/plans"
+cp "$CORE/bin/ledger-mem" "$PRUNE_SCRATCH/.context_ledger/core/bin/ledger-mem"
+cp "$CORE/bin/ledger-mem.ps1" "$PRUNE_SCRATCH/.context_ledger/core/bin/ledger-mem.ps1"
+cat > "$PRUNE_SCRATCH/.context_ledger/memory/office/inefficiencies/log.md" <<FIXTURE1
+# Inefficiency Log
+## 2026-09-01 -- A / m
+- **Problem:** flaky test on CI runner
+- **Status:** open
+## 2026-09-02 -- B / m
+- **Problem:** flaky test on CI runner
+- **Status:** open
+## 2026-09-03 -- C / m
+- **Problem:** Flaky  test on CI runner
+- **Status:** open
+## 2026-09-04 -- D / m
+- **Problem:** unrelated one-off
+- **Status:** RESOLVED -- installed psql
+FIXTURE1
+cat > "$PRUNE_SCRATCH/.context_ledger/memory/office/plans/decisions.md" <<FIXTURE2
+# Decisions
+## ADR-1: use sh ports only (2026-09-01)
+- **Status:** superseded by ADR-2
+## ADR-2: keep both ports (2026-09-02)
+- **Status:** accepted
+FIXTURE2
+
+sh "$PRUNE_SCRATCH/.context_ledger/core/bin/ledger-mem" prune > "$PRUNE_SCRATCH/.prune.log" 2>&1
+if grep -q "1 marked resolved/superseded" "$PRUNE_SCRATCH/.prune.log" && grep -q "roll-up: 3 entries hit the same recurring thing (flaky test on ci runner)" "$PRUNE_SCRATCH/.prune.log" && grep -q "plans/decisions.md" "$PRUNE_SCRATCH/.prune.log"; then
+  ok "prune: resolved entries + superseded ADR + 3-repeat roll-up all reported"
+else
+  bad "prune: compaction reports incomplete"
+  cat "$PRUNE_SCRATCH/.prune.log"
+fi
+
+if [ -n "$PS_BIN" ]; then
+  if command -v cygpath >/dev/null 2>&1; then
+    PRUNE_PS_W=$(cygpath -w "$PRUNE_SCRATCH/.context_ledger/core/bin/ledger-mem.ps1")
+  else
+    PRUNE_PS_W=$PRUNE_SCRATCH/.context_ledger/core/bin/ledger-mem.ps1
+  fi
+  "$PS_BIN" -NoProfile -ExecutionPolicy Bypass -File "$PRUNE_PS_W" prune > "$PRUNE_SCRATCH/.prune-ps.log" 2>&1
+  if grep -q "1 marked resolved/superseded" "$PRUNE_SCRATCH/.prune-ps.log" && grep -q "roll-up: 3 entries hit the same recurring thing (flaky test on ci runner)" "$PRUNE_SCRATCH/.prune-ps.log" && grep -q "plans/decisions.md" "$PRUNE_SCRATCH/.prune-ps.log"; then
+    ok "prune ps1: same archive-eligible + roll-up signals reported"
+  else
+    bad "prune ps1: compaction reports incomplete or diverging"
+    cat "$PRUNE_SCRATCH/.prune-ps.log"
+  fi
+fi
+rm -rf "$PRUNE_SCRATCH"
+
 # ---- UTF-8 encoding (core 1.0.2) --------------------------------------------
 # Windows PowerShell 5.1 reads BOM-less files in the ANSI codepage unless
 # -Encoding UTF8 is passed. The office migration rewrote history.conf through
