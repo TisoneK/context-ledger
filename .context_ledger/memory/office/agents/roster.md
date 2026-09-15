@@ -51,6 +51,7 @@ is your stable session tag.
 |------|----------|-------|-------|--------|---------------|
 | Nadia | S009 | qwen3.8-flash[1m] | General sweep (standing target): discovery + review + fix all safe issues across protocol, tools, templates, docs | Working | Phase 3: shipping core 1.1.2 (prune Status-line scoping) — main tree in flight, scope core/+tests/+memory only; hands off README.md (Amari's) |
 | Amari | S010 | qwen3.8-flash | README front-door rewrite: reposition the landing page around the agent-amnesia problem (supervisor supplied an outside review as input, not gospel) | Done | Shipped: README rewritten on main (bffbe9b), collab trail released, worktree torn down; row stays until the supervisor releases the session |
+| Kwame | S011 | qwen3.8-flash | Backlog-as-queue reform (supervisor brief): split the knowledge base from the work queue — actionable backlog capped, parking lot for deferred/advisory; protocol + template + re-seed rules follow | Working | Step 2: just signed in, about to read protocol + coordinate with Nadia (her sweep scope overlaps core/+memory) |
 
 **Keep your Status cells current — that is what the board is for.** The
 next live worker reads it to know at a glance what a peer has finished,
