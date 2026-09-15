@@ -255,6 +255,93 @@ EOF
 fi
 rm -rf "$MEM_SCRATCH"
 
+# ---- ledger-mem: capped backlog queue (core 1.2.0) ---------------------------
+# The backlog is a work queue, not a knowledge base: actionable rows only,
+# capped at backlog_cap (default 20) — past it, check draws a warn-only
+# nudge to prune into parking-lot.md. A backlog at or under the cap, and a
+# parking lot of any size, stay silent.
+MEM_SCRATCH=${TMPDIR:-/tmp}/ledger-test-mem-cap
+rm -rf "$MEM_SCRATCH"
+mkdir -p "$MEM_SCRATCH/.context_ledger/core" "$MEM_SCRATCH/.context_ledger/memory/office/agents" "$MEM_SCRATCH/.context_ledger/memory/office/tasks" "$MEM_SCRATCH/.context_ledger/memory/workflows"
+cp -R "$CORE/bin" "$MEM_SCRATCH/.context_ledger/core/bin"
+: > "$MEM_SCRATCH/.context_ledger/memory/office/agents/roster.md"
+BACKLOG="$MEM_SCRATCH/.context_ledger/memory/office/tasks/backlog.md"
+PARKING="$MEM_SCRATCH/.context_ledger/memory/office/tasks/parking-lot.md"
+
+make_rows() { # $1 file, $2 count — B-<date> table rows, the shape check counts
+  {
+    echo '# Backlog'
+    echo ''
+    echo '### High Priority'
+    echo ''
+    echo '| ID | Summary |'
+    echo '|----|---------|'
+    i=1
+    while [ "$i" -le "$2" ]; do
+      printf '| B-2026-09-01-%d | do the thing %d |\n' "$i" "$i"
+      i=$((i + 1))
+    done
+  } > "$1"
+}
+
+make_rows "$BACKLOG" 20
+cat > "$PARKING" <<'EOF'
+# Parking Lot
+
+## Findings
+
+| ID | Summary |
+|----|---------|
+| P-2026-09-01-1 | the queue was never the problem, the culture was |
+EOF
+if sh "$MEM_SCRATCH/.context_ledger/core/bin/ledger-mem" check > "$MEM_SCRATCH/.mem-out.log" 2>&1 \
+   && ! grep -q "WARN backlog.md" "$MEM_SCRATCH/.mem-out.log"; then
+  ok "mem: backlog at the cap passes check with no warn"
+else
+  bad "mem: backlog at the cap (20 rows) warned"
+  tail -n 5 "$MEM_SCRATCH/.mem-out.log"
+fi
+
+make_rows "$BACKLOG" 21
+if sh "$MEM_SCRATCH/.context_ledger/core/bin/ledger-mem" check > "$MEM_SCRATCH/.mem-out.log" 2>&1; then
+  if grep -q "WARN backlog.md" "$MEM_SCRATCH/.mem-out.log" \
+     && grep -q "past the cap of 20" "$MEM_SCRATCH/.mem-out.log" \
+     && grep -q "parking-lot.md" "$MEM_SCRATCH/.mem-out.log"; then
+    ok "mem: backlog past the cap draws a warn-only prune nudge"
+  else
+    bad "mem: over-cap backlog not flagged"
+  fi
+else
+  bad "mem: over-cap backlog failed the check (should warn only)"
+fi
+
+# backlog_cap is read from history.conf — a raised cap silences the warn
+printf 'backlog_cap=30\n' > "$MEM_SCRATCH/.context_ledger/memory/workflows/history.conf"
+if sh "$MEM_SCRATCH/.context_ledger/core/bin/ledger-mem" check > "$MEM_SCRATCH/.mem-out.log" 2>&1 \
+   && ! grep -q "WARN backlog.md" "$MEM_SCRATCH/.mem-out.log"; then
+  ok "mem: backlog_cap in history.conf raises the cap"
+else
+  bad "mem: backlog_cap conf key ignored"
+  tail -n 5 "$MEM_SCRATCH/.mem-out.log"
+fi
+
+if [ -n "$PS_BIN" ]; then
+  if command -v cygpath >/dev/null 2>&1; then
+    MEM_PS_W=$(cygpath -w "$MEM_SCRATCH/.context_ledger/core/bin/ledger-mem.ps1")
+  else
+    MEM_PS_W=$MEM_SCRATCH/.context_ledger/core/bin/ledger-mem.ps1
+  fi
+  rm -f "$MEM_SCRATCH/.context_ledger/memory/workflows/history.conf"
+  if "$PS_BIN" -NoProfile -ExecutionPolicy Bypass -File "$MEM_PS_W" check > "$MEM_SCRATCH/.mem-out.log" 2>&1 \
+     && grep -q "past the cap of 20" "$MEM_SCRATCH/.mem-out.log"; then
+    ok "mem ps1: over-cap backlog draws the same warn-only nudge"
+  else
+    bad "mem ps1: over-cap backlog not flagged or check failed"
+    tail -n 5 "$MEM_SCRATCH/.mem-out.log"
+  fi
+fi
+rm -rf "$MEM_SCRATCH"
+
 # ---- ledger-history: door-triggered close (core 1.1.0) ------------------------
 # A registry past office_size (default 20) means the next worker through the
 # door closes the office before working: status must say the close is due and
@@ -294,6 +381,13 @@ if grep -q "Dry run" "$HIST_SCRATCH/.hist-close.log" \
   ok "hist: close checklist demands no old-office session numbers in re-seeds"
 else
   bad "hist: close checklist lacks the no-leak re-seed rule"
+  tail -n 12 "$HIST_SCRATCH/.hist-close.log"
+fi
+if grep -q "re-seed WORK, not knowledge" "$HIST_SCRATCH/.hist-close.log" \
+   && grep -q "parking-lot" "$HIST_SCRATCH/.hist-close.log"; then
+  ok "hist: close checklist demands re-seeding work, not knowledge (parking lot)"
+else
+  bad "hist: close checklist lacks the work-not-knowledge re-seed rule"
   tail -n 12 "$HIST_SCRATCH/.hist-close.log"
 fi
 
