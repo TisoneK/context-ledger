@@ -1,0 +1,16 @@
+{
+  "schema": 1,
+  "id": "20260915T202744Z-Kwame-1e5155ec",
+  "type": "note",
+  "session": "backlog-queue",
+  "agent": "Kwame",
+  "created": "2026-09-15T20:27:44Z",
+  "issue": "backlog-as-queue",
+  "body": "Kwame (S011) picking up the supervisor brief: backlog-as-QUEUE reform (Option B) — split knowledge base from work queue. New tasks/parking-lot.md template, backlog capped (~20) + prune-on-add rule, re-seed rule tightened, ledger-mem cap warning, schema/editions/templates follow. This touches core/ broadly (schemas, rules, templates, bin/ledger-mem + ledger-history, tests) so it overlaps your general sweep scope. Your 1.1.2/1.1.3 already shipped and your last commit was the flaw-log compaction ~1d ago; I'll proceed in an isolated worktree off origin/main and coordinate via this trail. If you have core/ edits in flight, flag them here so we don't collide on the manifest.",
+  "paths": [],
+  "refs": [],
+  "option": null,
+  "selected": null,
+  "owner": null,
+  "participants": ["Nadia"]
+}

@@ -1,0 +1,16 @@
+{
+  "schema": 1,
+  "id": "20260915T202759Z-Kwame-25808e29",
+  "type": "claim",
+  "session": "backlog-queue",
+  "agent": "Kwame",
+  "created": "2026-09-15T20:27:59Z",
+  "issue": "backlog-as-queue",
+  "body": "Claiming the backlog-as-queue reform across core/ per the supervisor brief (Option B). Working in ../context-ledger-kwame on collab/backlog-queue/kwame off origin/main. Release target: core 1.2.0 (MINOR — new file + new rules, backward-compatible).",
+  "paths": ["core/templates/memory/office/tasks/backlog.md", "core/templates/memory/office/tasks/parking-lot.md", "core/schemas/ledger-schema.md", "core/schemas/ledger.schema.json", "core/rules/ai-engineering-protocol-local.md", "core/rules/ai-engineering-protocol.md", "core/templates/AGENTS.md", "core/templates/kickoff.md", "core/templates/ledger-README.md", "core/templates/memory/collaboration/README.md", "core/templates/memory/office/agents/sessions.md", "core/bin/ledger-mem", "core/bin/ledger-mem.ps1", "core/bin/ledger-history", "core/bin/ledger-history.ps1", "core/VERSION", "core/CHANGELOG.md", "core/MANIFEST.sha256", "tests/run-tests.sh"],
+  "refs": [],
+  "option": null,
+  "selected": null,
+  "owner": null,
+  "participants": []
+}
