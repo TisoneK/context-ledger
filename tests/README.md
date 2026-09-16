@@ -13,7 +13,7 @@ Run it before every `core/` release — it exercises both editions (sh and
 PowerShell) on scratch projects, so a fix that works in one port but not
 the other fails here. Exit 0 = green.
 
-## What is covered (core 1.1.3)
+## What is covered (core 1.2.0)
 
 **The gate verdict** (`core/bin/ledger-gates{,.ps1}`) — the headline case
 is the flaw back-ported from a fleet project: a POSIX pipeline reports
@@ -41,6 +41,15 @@ mentions and `<!-- -->` template comments never make an entry eligible
 **One-way-linkage sweep** (`ledger-mem lint --tree`, both ports) —
 product leaks report with `file:line`, memory files and clean files
 stay out of the report (core 1.1.0).
+
+**Capped backlog queue** (`ledger-mem check`, both ports) — the
+`tasks/backlog.md` work queue holds at most `backlog_cap` actionable
+rows (default 20, read from `workflows/history.conf`): a backlog at the
+cap passes silently, one row past it draws a **warn-only** nudge to
+prune into `parking-lot.md` (the check still exits 0 — a full queue is
+advisory, never a gate failure), and raising `backlog_cap` in
+`history.conf` silences it. The `ledger-history` pre-close checklist
+carries the matching "re-seed WORK, not knowledge" rule (core 1.2.0).
 
 **UTF-8 encoding** (`ledger-sync.ps1`, ps1-only) — the office migration
 preserves non-ASCII in `history.conf`; the lock writer is byte-identical
