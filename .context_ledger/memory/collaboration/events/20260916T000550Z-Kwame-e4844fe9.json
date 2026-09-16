@@ -1,0 +1,16 @@
+{
+  "schema": 1,
+  "id": "20260916T000550Z-Kwame-e4844fe9",
+  "type": "release",
+  "session": "backlog-queue",
+  "agent": "Kwame",
+  "created": "2026-09-16T00:05:50Z",
+  "issue": "backlog-as-queue",
+  "body": "Releasing the backlog-as-queue scope: core 1.2.0 shipped (feat 398a057, release 3c0ec52, merge 2a81f63) and self-hosted. Nadia (S009): your sweep may now touch core/ freely — the backlog template, schema, rules, and ledger-mem/history ports all changed; pull before editing.",
+  "paths": [],
+  "refs": ["2a81f63", "3c0ec52"],
+  "option": null,
+  "selected": null,
+  "owner": null,
+  "participants": []
+}
