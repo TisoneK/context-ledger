@@ -10,6 +10,32 @@ bump MINOR; wording and fixes bump PATCH.
 
 ---
 
+## 2.0.1 — 2026-09-18
+
+**A live bootstrap test of 2.0.0 (fresh scratch project, not just the unit
+fixtures) found two bugs in what it shipped.** `ledger-state generate`'s
+`field()`/`Get-Field` helper had no `<!-- -->` comment-skipping — unlike
+every other parser in this codebase — so a key mentioned only inside a
+file's own template comment (never given a real line yet, as on a fresh
+bootstrap) leaked the comment's placeholder text into `STATE.md` as if it
+were live data. That surfaced a second, independent bug:
+`workflows/active.md`'s template nests a second `<!-- -->` inside the
+outer one (an aside on the Protocol field) — invalid comment syntax that
+closes the outer block early — and the real skeleton below the comment
+was simply missing a `- **Target:** —` line the comment documents but
+never seeds. Both fixed: `field()`/`Get-Field` now skip `<!-- -->` blocks
+(single-level, matching `log_digest`/`check_roster`/`prune`); the
+template's nested aside is now a plain parenthetical, and the missing
+`Target` placeholder line is added. Flaw logged with the general lesson —
+`<!-- -->` never nests in this codebase's parsers.
+
+- **Migration:** none required — `ledger-sync update` picks it up; no
+  file moves, no format changes for already-filled `workflows/active.md`
+  files (this only affected freshly bootstrapped, still-placeholder
+  ones).
+
+---
+
 ## 2.0.0 — 2026-09-18
 
 **The protocol stops taxing product work to pay for its own bookkeeping.**

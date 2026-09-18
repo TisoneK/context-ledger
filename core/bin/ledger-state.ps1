@@ -46,10 +46,17 @@ function Get-Lines { param([string]$Path)
 }
 
 # one-line field grab: last "- **Label:** value" line (every source file
-# here is overwrite/update-in-place, so the last match is the current one).
+# here is overwrite/update-in-place, so the last match is the current
+# one). Skips <!-- --> blocks: a key mentioned only in the file's own
+# template comment (never given a real line yet, e.g. a freshly
+# bootstrapped skeleton) must read as empty, not leak the comment's
+# placeholder text as if it were live data.
 function Get-Field { param([string]$Path, [string]$Label)
   $val = ''
+  $intpl = $false
   foreach ($line in (Get-Lines $Path)) {
+    if (-not $intpl -and $line -match '^<!--') { if ($line -notmatch '-->') { $intpl = $true }; continue }
+    if ($intpl) { if ($line -match '-->') { $intpl = $false }; continue }
     if ($line -match "^\s*[-*]\s*\*\*$Label:\*\*\s*(.*)$") { $val = $Matches[1] }
   }
   return $val
