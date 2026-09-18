@@ -1,0 +1,16 @@
+{
+  "schema": 1,
+  "id": "20260918T184849Z-Leo-137b57a8",
+  "type": "release",
+  "session": "S012",
+  "agent": "Leo",
+  "created": "2026-09-18T18:48:49Z",
+  "issue": "ledger-token-optimization",
+  "body": "core 2.0.1 shipped and self-hosted: STATE.md digest, thin AGENTS.md/CLAUDE.md, phased kickoff.md with task-scaled routing, edition playbook split, append-only prune --apply + caps. Live-tested via a throwaway bootstrap; found and fixed 2 bugs (tests/run-tests.sh PS_SCRATCH crash, ledger-state template-comment leak).",
+  "paths": [],
+  "refs": ["20260918T180151Z-Leo-e222f15c"],
+  "option": null,
+  "selected": null,
+  "owner": null,
+  "participants": []
+}

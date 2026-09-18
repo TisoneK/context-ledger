@@ -12,6 +12,6 @@ entry and backlog before starting.
 - **Status:** in-progress | done | blocked (<blocker>)
 -->
 
-- **Session:** 2026-09-18 — Leo / claude-sonnet-5
-- **Task:** token/context optimization for the `.context_ledger` protocol itself — core 1.2.0 → 2.0.0: `office/STATE.md` digest + `ledger-state`, thin `AGENTS.md`/`CLAUDE.md`, phased `kickoff.md` with task-scaled routing, de-dup + playbook split of the two editions, append-only compaction governance (`ledger-mem prune --apply`, flaws/inefficiencies caps)
-- **Status:** in-progress
+- **Session:** —
+- **Task:** none — no session in progress
+- **Status:** idle

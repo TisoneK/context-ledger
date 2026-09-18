@@ -5,10 +5,10 @@ at check-in and at exit. This is a DERIVED VIEW for fast orientation;
 open the file a line points at when your task needs more than the
 line gives you. Full reading order: ledger-schema.md. -->
 
-_Regenerated: 2026-09-18T18:09:43Z_
+_Regenerated: 2026-09-18T18:50:48Z_
 
 ## Standing params
-- **Core:** 1.2.0 (locked, verified 2026-09-18)
+- **Core:** 2.0.1 (locked, verified 2026-09-18)
 - **Target:** general sweep unless the user's chat message names a task
 - **Scope:** discovery + review + fix all safe issues
 - **Push policy:** push to main directly after each commit
@@ -17,10 +17,10 @@ _Regenerated: 2026-09-18T18:09:43Z_
 ## Office — who's in, right now
 - **Amari** (S010) — Done — README front-door rewrite: reposition the landing page around the agent-amnesia problem (…
 - **Kwame** (S011) — Done — Re-check-in after clock-out: supervisor found a file I left untracked at close (office/se…
-- **Leo** (S012) — Working — Supervisor brief: token/context optimization for the `.context_ledger` protocol itself (c…
+- **Leo** (S012) — Done — Supervisor brief: token/context optimization for the `.context_ledger` protocol itself (c…
 
 ## Current task
-- **2026-09-18 — Leo / claude-sonnet-5** — token/context optimization for the `.context_ledger` protocol itself — core 1.2.0 → 2.0.0: `office/STATE.md` digest + `ledger-state`, t… — *in-progress*
+- **—** — none — no session in progress — *idle*
 
 ## Backlog — High priority (the top of the queue)
 (none)
@@ -28,10 +28,10 @@ _Regenerated: 2026-09-18T18:09:43Z_
 _0 medium, 1 low priority row(s) — see tasks/backlog.md_
 
 ## Logs at a glance — open only if your task touches these
-- flaws/log.md (protocol/.context_ledger friction): 7 entries, last added 2026-09-18
+- flaws/log.md (protocol/.context_ledger friction): 8 entries, last added 2026-09-18
 - inefficiencies/log.md (project code/env friction): 5 entries, last added 2026-09-14
-- plans/decisions.md (ADRs in force — respected, not relitigated): 6 entries, last added 2026-09-15
+- plans/decisions.md (ADRs in force — respected, not relitigated): 7 entries, last added 2026-09-18
 
 ## Collaboration
-- 15 event(s) on file; most recent: `20260918T180151Z-Leo-e222f15c.json`
+- 16 event(s) on file; most recent: `20260918T184849Z-Leo-137b57a8.json`
 - Full trail + rules: `memory/collaboration/README.md`; live status: `ledger-collab status --session <S> --issue <slug>`

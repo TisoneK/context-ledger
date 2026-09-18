@@ -67,6 +67,7 @@ Loose ideas with no owner and no hook yet. The lowest-pressure shelf.
 
 | ID | Summary |
 |----|---------|
+| P-2026-09-18-1 | An atomic `ledger-checkin` script (read roster+sessions.md, compute next codename, append row, commit, push, print confirmation) to replace the multi-paragraph check-in reasoning a session currently has to do by hand. Considered and deliberately deferred during the core 2.0.0 token-optimization pass (larger and riskier than the rest of that work — concurrency/push semantics need real design, not a quick add). Discussed with the supervisor; not built. |
 
 <!-- TEMPLATE — add one row to the matching section:
 | P-<YYYY-MM-DD>-<n> | <enough context that a future session can pick
