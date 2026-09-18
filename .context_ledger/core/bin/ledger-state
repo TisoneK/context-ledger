@@ -40,11 +40,22 @@ usage() {
 # one-line field grab: file, a leading label regex (already anchored),
 # strips the label and surrounding whitespace, keeps only the LAST match
 # (every source file here is overwrite/update-in-place — never append-only
-# — so the last match is always the current value).
+# — so the last match is always the current value). Skips <!-- --> blocks:
+# a key mentioned only in the file's own template comment (never given a
+# real line yet, e.g. a freshly bootstrapped skeleton) must read as empty,
+# not leak the comment's placeholder text as if it were live data.
 field() {
   _f=$1; _label=$2
   [ -f "$_f" ] || return 0
-  sed -n "s/^[[:space:]]*[-*][[:space:]]*\*\*${_label}:\*\*[[:space:]]*//p" "$_f" | tail -n1
+  awk -v label="$_label" '
+    /^<!--/ { if ($0 !~ /-->/) intpl = 1; next }
+    intpl { if ($0 ~ /-->/) intpl = 0; next }
+    {
+      pat = "^[[:space:]]*[-*][[:space:]]*\\*\\*" label ":\\*\\*[[:space:]]*"
+      if (match($0, pat)) last = substr($0, RLENGTH + 1)
+    }
+    END { print last }
+  ' "$_f"
 }
 
 truncate_line() {
