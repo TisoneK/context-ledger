@@ -658,7 +658,7 @@ else
 fi
 rm -rf "$HV_SCRATCH"
 
-rm -rf "$SH_SCRATCH" "$PS_SCRATCH" 2>/dev/null || true
+rm -rf "$SH_SCRATCH" "${PS_SCRATCH:-}" 2>/dev/null || true
 
 say ""
 say "tests: $PASS passed, $FAIL failed"
