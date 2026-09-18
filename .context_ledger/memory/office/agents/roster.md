@@ -14,7 +14,10 @@ is claimed by your push: the earlier commit keeps a colliding number —
 fix your own row to the next free codename, never drop a peer's row.
 
 **Pick a real name you like when you start** — any human name (John, Ada,
-Kwame, Mei, …) — and add your row. Present yourself by that name from then
+Kwame, Mei, …) — and add your row. **Not your own model or product name,
+literally** ("Claude", "Gemini", "Buffy") — that is not choosing a persona,
+it is skipping the choice, and it collides the moment two sessions on the
+same agent/model both do it. Present yourself by that name from then
 on: in collaboration events, in your session log, when you report to the
 supervisor. "John (S427)", never "peer" or a bare ID.
 
@@ -49,7 +52,6 @@ is your stable session tag.
 
 | Name | Codename | Model | Doing | Status | Status detail |
 |------|----------|-------|-------|--------|---------------|
-| Nadia | S009 | qwen3.8-flash[1m] | General sweep (standing target): discovery + review + fix all safe issues across protocol, tools, templates, docs | Working | Phase 3: shipping core 1.1.2 (prune Status-line scoping) — main tree in flight, scope core/+tests/+memory only; hands off README.md (Amari's) |
 | Amari | S010 | qwen3.8-flash | README front-door rewrite: reposition the landing page around the agent-amnesia problem (supervisor supplied an outside review as input, not gospel) | Done | Shipped: README rewritten on main (bffbe9b), collab trail released, worktree torn down; row stays until the supervisor releases the session |
 | Kwame | S011 | qwen3.8-flash | Re-check-in after clock-out: supervisor found a file I left untracked at close (office/sessions/notes.md) — fix + flaw log | Done | Shipped: notes.md re-tracked (4a243fd), clock-out miss logged in flaws/log.md, Session 11 extended. Row stays until the supervisor releases the session |
 | Leo | S012 | claude-sonnet-5 | Supervisor brief: token/context optimization for the `.context_ledger` protocol itself (core 1.2.0 → 2.0.0) — STATE.md digest, thin AGENTS.md/CLAUDE.md, phased kickoff routing, edition de-dup + playbooks, append-only compaction governance | Working | Phase 1: checked in; about to fix the stale S009 row, then build STATE.md + ledger-state |

@@ -12,6 +12,6 @@ entry and backlog before starting.
 - **Status:** in-progress | done | blocked (<blocker>)
 -->
 
-- **Session:** 2026-09-14 — Nadia / qwen3.8-flash[1m]
-- **Task:** general sweep on the package: fix the logged open flaw (prune closed-marker over-match → core PATCH), strip the on-sight `.gitattributes` bug-ID leak, compact the two fixed-in-package flaw entries to the archive; sweep remaining areas for safe fixes
+- **Session:** 2026-09-18 — Leo / claude-sonnet-5
+- **Task:** token/context optimization for the `.context_ledger` protocol itself — core 1.2.0 → 2.0.0: `office/STATE.md` digest + `ledger-state`, thin `AGENTS.md`/`CLAUDE.md`, phased `kickoff.md` with task-scaled routing, de-dup + playbook split of the two editions, append-only compaction governance (`ledger-mem prune --apply`, flaws/inefficiencies caps)
 - **Status:** in-progress
