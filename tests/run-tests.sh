@@ -497,7 +497,78 @@ if [ -n "$PS_BIN" ]; then
     cat "$PRUNE_SCRATCH/.prune-ps.log"
   fi
 fi
+# ---- ledger-mem prune --apply: mechanical move, roll-up stays manual (core 2.0.0) ----
+# --apply must cut exactly the closed entries (D in inefficiencies, D-1 in
+# decisions) verbatim into archive.md, leave every open entry (A/B/C's
+# roll-up candidates, E, D-2) and the template comment untouched in the
+# live log, and NOT attempt the 3-repeat roll-up (that stays a manual edit).
+sh "$PRUNE_SCRATCH/.context_ledger/core/bin/ledger-mem" prune --apply > "$PRUNE_SCRATCH/.prune-apply.log" 2>&1
+INEFF_LOG="$PRUNE_SCRATCH/.context_ledger/memory/office/inefficiencies/log.md"
+INEFF_ARCHIVE="$PRUNE_SCRATCH/.context_ledger/memory/office/inefficiencies/archive.md"
+DEC_LOG="$PRUNE_SCRATCH/.context_ledger/memory/office/plans/decisions.md"
+DEC_ARCHIVE="$PRUNE_SCRATCH/.context_ledger/memory/office/plans/archive.md"
+if grep -q "moved 1 entry to inefficiencies/archive.md" "$PRUNE_SCRATCH/.prune-apply.log" \
+   && grep -q "moved 1 entry to plans/archive.md" "$PRUNE_SCRATCH/.prune-apply.log" \
+   && ! grep -q "## 2026-09-04 -- D / m" "$INEFF_LOG" \
+   && grep -q "## 2026-09-04 -- D / m" "$INEFF_ARCHIVE" \
+   && grep -q "RESOLVED -- installed psql" "$INEFF_ARCHIVE" \
+   && grep -q "## 2026-09-01 -- A / m" "$INEFF_LOG" \
+   && grep -q "## 2026-09-05 -- E / m" "$INEFF_LOG" \
+   && grep -q "TEMPLATE -- copy below the last entry" "$INEFF_LOG" \
+   && ! grep -q "## D-1: use sh ports only" "$DEC_LOG" \
+   && grep -q "## D-1: use sh ports only" "$DEC_ARCHIVE" \
+   && grep -q "## D-2: keep both ports" "$DEC_LOG"; then
+  ok "prune --apply: moves closed entries verbatim, leaves open entries + roll-up + template alone"
+else
+  bad "prune --apply: closed-entry move incorrect"
+  cat "$PRUNE_SCRATCH/.prune-apply.log"
+  echo "--- inefficiencies/log.md ---"; cat "$INEFF_LOG" 2>/dev/null
+  echo "--- inefficiencies/archive.md ---"; cat "$INEFF_ARCHIVE" 2>/dev/null
+fi
+# a second --apply on the now-clean logs must be a no-op, not an error
+sh "$PRUNE_SCRATCH/.context_ledger/core/bin/ledger-mem" prune --apply > "$PRUNE_SCRATCH/.prune-apply-2.log" 2>&1
+if grep -q "nothing marked resolved/superseded" "$PRUNE_SCRATCH/.prune-apply-2.log"; then
+  ok "prune --apply: idempotent -- nothing left to move reports cleanly"
+else
+  bad "prune --apply: re-running on a clean log misbehaves"
+  cat "$PRUNE_SCRATCH/.prune-apply-2.log"
+fi
 rm -rf "$PRUNE_SCRATCH"
+
+# ---- ledger-mem check: flaws_cap / inefficiencies_cap nudge (core 2.0.0) -----
+# Mirrors the existing backlog_cap test shape: past the cap warns without
+# failing; the conf key raises it. 16 entries vs. the default cap of 15.
+CAP_SCRATCH=${TMPDIR:-/tmp}/ledger-test-logcap
+rm -rf "$CAP_SCRATCH"
+mkdir -p "$CAP_SCRATCH/.context_ledger/core/bin" "$CAP_SCRATCH/.context_ledger/memory/office/flaws" "$CAP_SCRATCH/.context_ledger/memory/workflows"
+cp "$CORE/bin/ledger-mem" "$CAP_SCRATCH/.context_ledger/core/bin/ledger-mem"
+{
+  printf '# Flaws Log\n'
+  i=1
+  while [ "$i" -le 16 ]; do
+    printf '## 2026-09-%02d -- T / m\n- **Flaw:** x\n- **Status:** open\n' "$i"
+    i=$((i + 1))
+  done
+} > "$CAP_SCRATCH/.context_ledger/memory/office/flaws/log.md"
+sh "$CAP_SCRATCH/.context_ledger/core/bin/ledger-mem" check > "$CAP_SCRATCH/.check.log" 2>&1
+_cap_rc=$?
+if [ "$_cap_rc" -eq 0 ] && grep -q "WARN flaws/log.md: 16 entries past the cap of 15" "$CAP_SCRATCH/.check.log"; then
+  ok "mem: flaws.log past the default cap draws a warn-only prune nudge"
+else
+  bad "mem: flaws_cap default nudge missing or check failed"
+  cat "$CAP_SCRATCH/.check.log"
+fi
+printf 'flaws_cap=20\n' > "$CAP_SCRATCH/.context_ledger/memory/workflows/history.conf"
+sh "$CAP_SCRATCH/.context_ledger/core/bin/ledger-mem" check > "$CAP_SCRATCH/.check2.log" 2>&1 \
+  && ! grep -q "WARN flaws/log.md" "$CAP_SCRATCH/.check2.log"
+_cap2_ok=$?
+if [ "$_cap2_ok" -eq 0 ]; then
+  ok "mem: flaws_cap in history.conf raises the cap and silences the warn"
+else
+  bad "mem: flaws_cap override not honored"
+  cat "$CAP_SCRATCH/.check2.log"
+fi
+rm -rf "$CAP_SCRATCH"
 
 # ---- ledger-mem lint --tree: sweep old-session leaks (core 1.1.0) ------------
 # A leak an earlier session committed into product code is stripped on sight;

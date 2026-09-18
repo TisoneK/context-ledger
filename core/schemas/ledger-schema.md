@@ -347,32 +347,44 @@ read stays cheap:
   history: cut it unchanged into the log's companion archive
   (`flaws/archive.md`, `inefficiencies/archive.md`, `plans/archive.md`).
   Startup reads only the active log; the archive stays in git,
-  grep-able. Manual cut-and-paste, never automatic — and only an
-  explicit closed marker makes an entry eligible; age alone never does.
-  The marker is the entry's **own** `**Status:**` line carrying one of
-  those words — prose elsewhere in the entry is never the marker (an
-  accepted ADR *describing* the compaction rule mentions "superseded"
-  without being closed), and a file's `<!-- -->` template comment is
-  never a candidate (its placeholder Status lines carry the words
-  literally). `ledger-mem prune` follows exactly this scoping.
-  An unresolved flaw stays in the active log: it is a live trap the next
+  grep-able. `ledger-mem prune --apply` performs this move mechanically
+  (`ledger-mem prune`, no flag, only reports it — the manual cut-and-paste
+  is still there for anyone who prefers it) — and only an explicit closed
+  marker makes an entry eligible either way; age alone never does. The
+  marker is the entry's **own** `**Status:**` line carrying one of those
+  words — prose elsewhere in the entry is never the marker (an accepted
+  ADR *describing* the compaction rule mentions "superseded" without
+  being closed), and a file's `<!-- -->` template comment is never a
+  candidate (its placeholder Status lines carry the words literally).
+  Both `prune` and `prune --apply` follow exactly this scoping. An
+  unresolved flaw stays in the active log: it is a live trap the next
   agent must see.
 - **Repeats roll up.** When a log holds 3+ entries describing the same
   recurring thing (same failing tool, same root cause, same protocol
   trap), append ONE consolidated `Recurring` entry — the pattern, how
   many times, the current workaround — and move the individual entries
   verbatim into the archive. The live log keeps the pattern, not the
-  repeats.
+  repeats. This move stays manual even under `--apply`: composing the
+  one consolidated entry needs an agent's judgment, not a mechanical cut.
 - **The office bounds the session registry.** `agents/sessions.md` needs
   none of the above within a healthy office: the door-triggered close
   (see Office lifecycle) freezes it at `office_size` entries or fewer,
   and `sessions/SUMMARY.md` prunes at ~40 lines as before.
+- **A cap nudges before a log grows unbounded.** `flaws_cap` and
+  `inefficiencies_cap` in `workflows/history.conf` (default 15 each) are
+  hygiene nudges, not hard limits — `ledger-mem check` warns past them,
+  pointing at `prune`/`prune --apply`; an unresolved entry is never
+  pruned regardless of count. `ledger-gates run exit` also calls
+  `ledger-mem prune` (report mode) so the nudge surfaces at the natural
+  moment, not only when someone thinks to run it by hand.
 
 `ledger-mem prune` reports each log's size, the archive-eligible
-entries (`--list` names them), and roll-up candidates — advisory only;
-the moves are the agent's edit, and every moved line survives unchanged
-in the archive and in git history. Compaction relocates; it never
-rewrites or deletes context.
+entries (`--list` names them), and roll-up candidates. `ledger-mem prune
+--apply` performs the archive-eligible moves (only those — never the
+roll-up) mechanically, creating the companion `archive.md` with a header
+if it doesn't exist yet; every moved line survives unchanged in the
+archive and in git history. Compaction relocates; it never rewrites or
+deletes context.
 
 ### Reading order (session start)
 
