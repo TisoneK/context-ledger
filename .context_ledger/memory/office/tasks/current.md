@@ -12,6 +12,6 @@ entry and backlog before starting.
 - **Status:** in-progress | done | blocked (<blocker>)
 -->
 
-- **Session:** —
-- **Task:** none — no session in progress
-- **Status:** idle
+- **Session:** 2026-09-18 — Nia / claude-sonnet-5
+- **Task:** capture a post-MVP backlog idea in MVP.md — consolidate the sh+ps1 tool ports (core/bin/) into a single Python implementation, motivated by the sh/ps1-parity inefficiency already logged
+- **Status:** in-progress

@@ -165,6 +165,22 @@ merge conflicting code or choose a winner.
 - **Windows-native paths** — `future` — the docs are POSIX-flavored;
   `check` and the kickoff commands need PowerShell equivalents before a
   general public release.
+- **Single Python implementation for `core/bin/`** — `exploring` — today
+  each of the 7 tools ships as a hand-maintained `sh` + `.ps1` pair (the
+  `.cmd` files are thin launchers) — ~5,300 lines across both ports that
+  must be kept in parity by hand. `inefficiencies/log.md` (Session ~S0xx,
+  "three PowerShell / Git-Bash traps") already logs ~25 minutes lost to
+  parity bugs alone: swallowed warnings from PS output-stream capture,
+  `Set-StrictMode` scalar-vs-array `.Count`, and heredoc backslash-collapse
+  corrupting inserted script text. A single Python implementation would
+  run identically on macOS/Linux/Windows and remove the drift class of bug
+  entirely. Tradeoff, and why this isn't `mvp`: the package's zero-setup
+  promise today relies on `sh` (ships on every POSIX box) and PowerShell
+  (ships on Windows 10+) needing no runtime install; requiring Python 3 on
+  PATH is a new hard dependency for every consuming project/agent, not
+  guaranteed in minimal containers or locked-down CI. Direction not yet
+  agreed — captured here per the supervisor's "maybe add to mvp," decided
+  to stay `sh`+`.ps1` for now (2026-09-18).
 
 ---
 
