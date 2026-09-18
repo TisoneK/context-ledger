@@ -123,3 +123,13 @@ re-seeded into the new office explicitly, and nothing else carries over.
 - **Open items:** none new for this office — `check_roster_stale`'s gap (doesn't catch a codename with NO session entry ever, only a mismatched one) and the atomic `ledger-checkin` idea are recorded (flaws/log.md, tasks/parking-lot.md P-2026-09-18-1) as future-patch material, not queued work.
 - **Notes:** summary only
 - **Collab:** session `ledger-token-optimization` / issue same, solo (office empty at arrival save for the stale S009 row, removed); claim 20260918T180151Z-Leo-e222f15c → release 20260918T184849Z-Leo-137b57a8.
+
+## 2026-09-18 — Session 13
+
+- **Agent:** Nia | **Model:** claude-sonnet-5 | **Platform:** macOS 24.6.0 (Claude Code desktop app, local) | **Role:** engineer | **Core:** 2.0.1 (unchanged)
+- **Task:** supervisor chat discussion on whether `core/bin/`'s sh+ps1 tool ports should move to Python; supervisor decided to keep sh+ps1 for now but asked to capture the idea as a post-MVP backlog item
+- **Commits:** 3 (003dba6 check-in, 30cfd23 STATE.md, c681d1a docs) + this closeout
+- **Outcome:** done — no code or core changes. Added an `exploring` bullet to `MVP.md` under "Future / advanced (post-MVP)": consolidate the 7 tools' `sh` + `.ps1` ports (the `.cmd` files are thin launchers) into one Python implementation, citing the parity-bug cost already on record in `inefficiencies/log.md` ("three PowerShell / Git-Bash traps," ~25 min lost) as the motivating evidence, and naming the tradeoff (new Python-on-PATH runtime dependency vs. today's zero-setup sh/PowerShell promise) as the reason it isn't `mvp`.
+- **Open items:** none new — this is a captured idea, not queued work; no design decision made either way.
+- **Notes:** summary only
+- **Collab:** none — solo, office had only `Done` rows (Amari S010, Kwame S011) on arrival, no claim needed for a docs-only single-file edit outside `.context_ledger/core/`.
