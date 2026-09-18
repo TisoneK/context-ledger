@@ -5,7 +5,7 @@ at check-in and at exit. This is a DERIVED VIEW for fast orientation;
 open the file a line points at when your task needs more than the
 line gives you. Full reading order: ledger-schema.md. -->
 
-_Regenerated: 2026-09-18T18:52:16Z_
+_Regenerated: 2026-09-18T18:52:55Z_
 
 ## Standing params
 - **Core:** 2.0.1 (locked, verified 2026-09-18)
@@ -17,7 +17,6 @@ _Regenerated: 2026-09-18T18:52:16Z_
 ## Office — who's in, right now
 - **Amari** (S010) — Done — README front-door rewrite: reposition the landing page around the agent-amnesia problem (…
 - **Kwame** (S011) — Done — Re-check-in after clock-out: supervisor found a file I left untracked at close (office/se…
-- **Leo** (S012) — Done — Supervisor brief: token/context optimization for the `.context_ledger` protocol itself (c…
 
 ## Current task
 - **—** — none — no session in progress — *idle*
