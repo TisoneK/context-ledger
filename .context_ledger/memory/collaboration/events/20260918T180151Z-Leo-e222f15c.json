@@ -1,0 +1,16 @@
+{
+  "schema": 1,
+  "id": "20260918T180151Z-Leo-e222f15c",
+  "type": "claim",
+  "session": "S012",
+  "agent": "Leo",
+  "created": "2026-09-18T18:01:51Z",
+  "issue": "ledger-token-optimization",
+  "body": "core 1.2.0 -> 2.0.0: STATE.md digest, thin AGENTS.md/CLAUDE.md, phased kickoff.md, edition de-dup + playbooks, append-only prune --apply + caps",
+  "paths": ["core/", ".context_ledger/", "tests/", "README.md", "fleet.md"],
+  "refs": [],
+  "option": null,
+  "selected": null,
+  "owner": null,
+  "participants": []
+}
