@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$comment": "Machine-readable mirror of ledger-schema.md (the authoritative document). Update both in the same commit. Consumers: ledger-sync, future check tooling, agents that prefer structured data.",
   "title": ".context_ledger/ directory schema",
-  "coreVersion": "1.0.0",
+  "coreVersion": "2.0.0",
   "zones": {
     "core": {
       "path": ".context_ledger/core/",
