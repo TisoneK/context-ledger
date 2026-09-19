@@ -5,7 +5,7 @@ at check-in and at exit. This is a DERIVED VIEW for fast orientation;
 open the file a line points at when your task needs more than the
 line gives you. Full reading order: ledger-schema.md. -->
 
-_Regenerated: 2026-09-19T09:28:48Z_
+_Regenerated: 2026-09-19T09:34:04Z_
 
 ## Standing params
 - **Core:** 2.0.1 (locked, verified 2026-09-18)
@@ -20,7 +20,7 @@ _Regenerated: 2026-09-19T09:28:48Z_
 - **Priya** (S014) — Working — URGENT regression: supervisor reports agents fight during initialization because check-in…
 
 ## Current task
-- **—** — none — no session in progress — *idle*
+- **2026-09-19 — Priya / claude-sonnet-5** — fix the check-in-first regression: core 2.0.0/2.0.1's thinned AGENTS.md dropped the standalone "check in before anything else" directive th… — *in-progress*
 
 ## Backlog — High priority (the top of the queue)
 (none)
@@ -28,10 +28,10 @@ _Regenerated: 2026-09-19T09:28:48Z_
 _0 medium, 1 low priority row(s) — see tasks/backlog.md_
 
 ## Logs at a glance — open only if your task touches these
-- flaws/log.md (protocol/.context_ledger friction): 6 entries, last added 2026-09-18
+- flaws/log.md (protocol/.context_ledger friction): 7 entries, last added 2026-09-19
 - inefficiencies/log.md (project code/env friction): 5 entries, last added 2026-09-14
 - plans/decisions.md (ADRs in force — respected, not relitigated): 7 entries, last added 2026-09-18
 
 ## Collaboration
-- 16 event(s) on file; most recent: `20260918T184849Z-Leo-137b57a8.json`
+- 17 event(s) on file; most recent: `20260919T092909Z-Priya-978d9cad.json`
 - Full trail + rules: `memory/collaboration/README.md`; live status: `ledger-collab status --session <S> --issue <slug>`

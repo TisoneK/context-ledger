@@ -729,6 +729,26 @@ else
 fi
 rm -rf "$HV_SCRATCH"
 
+# ---- weak-agent floor: AGENTS.md/CLAUDE.md must state check-in directly (core 2.0.2) --
+# Regression guard: core 2.0.0 reduced AGENTS.md to a pure router ("go read
+# kickoff.md") and dropped the standalone check-in-before-analysis directive
+# it used to restate as a deliberate safety margin for agents that read only
+# the root digest and never reliably chain into kickoff.md's phases. That
+# silent removal caused a real collision (sessions fighting during init,
+# reported directly by the supervisor) that no other test caught, because
+# every other test exercises an agent that faithfully follows the documented
+# phases. This test does not run the protocol -- it just asserts the floor
+# still says what it must say, in the file some sessions never read past.
+for f in "$CORE/templates/AGENTS.md" "$CORE/templates/CLAUDE.md"; do
+  if grep -qi "check in" "$f" && grep -q "roster.md" "$f" \
+     && grep -qiE "before (reading|doing|analyz)" "$f"; then
+    ok "floor: $(basename "$f") states check-in-before-analysis directly"
+  else
+    bad "floor: $(basename "$f") is missing a direct check-in-before-analysis directive"
+    cat "$f"
+  fi
+done
+
 rm -rf "$SH_SCRATCH" "${PS_SCRATCH:-}" 2>/dev/null || true
 
 say ""
