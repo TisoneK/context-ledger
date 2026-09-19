@@ -54,6 +54,7 @@ is your stable session tag.
 |------|----------|-------|-------|--------|---------------|
 | Amari | S010 | qwen3.8-flash | README front-door rewrite: reposition the landing page around the agent-amnesia problem (supervisor supplied an outside review as input, not gospel) | Done | Shipped: README rewritten on main (bffbe9b), collab trail released, worktree torn down; row stays until the supervisor releases the session |
 | Kwame | S011 | qwen3.8-flash | Re-check-in after clock-out: supervisor found a file I left untracked at close (office/sessions/notes.md) — fix + flaw log | Done | Shipped: notes.md re-tracked (4a243fd), clock-out miss logged in flaws/log.md, Session 11 extended. Row stays until the supervisor releases the session |
+| Priya | S014 | claude-sonnet-5 | URGENT regression: supervisor reports agents fight during initialization because check-in-before-analysis stopped working after core 2.0.0/2.0.1's AGENTS.md/kickoff.md rewrite — investigating + fixing | Working | Diagnosed: AGENTS.md (the weak-agent floor) was reduced to a pure router with no standalone check-in directive, unlike its pre-2.0.0 version; about to restore it |
 
 **Keep your Status cells current — that is what the board is for.** The
 next live worker reads it to know at a glance what a peer has finished,
