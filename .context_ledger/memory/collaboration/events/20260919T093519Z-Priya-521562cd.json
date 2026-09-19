@@ -1,0 +1,16 @@
+{
+  "schema": 1,
+  "id": "20260919T093519Z-Priya-521562cd",
+  "type": "release",
+  "session": "S014",
+  "agent": "Priya",
+  "created": "2026-09-19T09:35:19Z",
+  "issue": "fix-checkin-regression",
+  "body": "core 2.0.2 shipped and self-hosted: restored the check-in-before-analysis directive to AGENTS.md/CLAUDE.md, strengthened kickoff.md's phase-execution guidance, corrected ledger-schema.md, added a regression test. Verified on a fresh bootstrap.",
+  "paths": [],
+  "refs": ["20260919T092909Z-Priya-978d9cad"],
+  "option": null,
+  "selected": null,
+  "owner": null,
+  "participants": []
+}

@@ -124,6 +124,16 @@ re-seeded into the new office explicitly, and nothing else carries over.
 - **Notes:** summary only
 - **Collab:** session `ledger-token-optimization` / issue same, solo (office empty at arrival save for the stale S009 row, removed); claim 20260918T180151Z-Leo-e222f15c → release 20260918T184849Z-Leo-137b57a8.
 
+## 2026-09-19 — Session 14
+
+- **Agent:** Priya | **Model:** claude-sonnet-5 | **Platform:** macOS 24.6.0 (Claude Code desktop app, local) | **Role:** engineer | **Core:** 2.0.1 → 2.0.2
+- **Task:** URGENT regression fix — the supervisor reported that sessions were fighting during initialization because check-in-before-analysis stopped working: agents were jumping to analysis, not seeing a live peer, and checking in too late
+- **Commits:** 5 (3e9d5c5 check-in .. 5796d66 self-host 2.0.2) + this closeout
+- **Outcome:** done — root cause traced to core 2.0.0 (Session 12): `AGENTS.md` was reduced from a 158-line digest to a ~28-line pure router, dropping the standalone "check in before any analysis" directive it used to restate on purpose as the **weak-agent floor** — some sessions on this repo read only the root digest and don't reliably chain through a multi-file routing sequence, so "go read kickoff.md" wasn't itself sufficient. This is the same failure class core 1.0.6 already fixed once (two sessions launched together both seeing an empty board). Fixed in core 2.0.2: `AGENTS.md`/`CLAUDE.md` (templates + this repo's own root copies) each restore a short, standalone check-in-first directive placed *before* the "read kickoff.md" pointer — ~40/~20 lines, still far short of the pre-2.0.0 158/32, only the one load-bearing line came back; `kickoff.md`'s Phases intro gained an explicit "execute each phase before reading the next" instruction with a named recovery step; `ledger-schema.md`'s Translation layer corrected to match; a new regression test asserts both files state check-in directly, so this can't silently regress again. Verified by bootstrapping a fresh throwaway project and confirming the directive renders correctly in both files. Flaw logged with the general lesson: check whether repetition is a documented safety margin before removing it as duplication.
+- **Open items:** none new.
+- **Notes:** summary only
+- **Collab:** session `fix-checkin-regression` / issue same, solo (office empty at arrival); claim 20260919T092909Z-Priya-978d9cad → release 20260919T093519Z-Priya-521562cd.
+
 ## 2026-09-18 — Session 13
 
 - **Agent:** Nia | **Model:** claude-sonnet-5 | **Platform:** macOS 24.6.0 (Claude Code desktop app, local) | **Role:** engineer | **Core:** 2.0.1 (unchanged)

@@ -5,10 +5,10 @@ at check-in and at exit. This is a DERIVED VIEW for fast orientation;
 open the file a line points at when your task needs more than the
 line gives you. Full reading order: ledger-schema.md. -->
 
-_Regenerated: 2026-09-19T09:34:04Z_
+_Regenerated: 2026-09-19T09:36:18Z_
 
 ## Standing params
-- **Core:** 2.0.1 (locked, verified 2026-09-18)
+- **Core:** 2.0.2 (locked, verified 2026-09-19)
 - **Target:** general sweep unless the user's chat message names a task
 - **Scope:** discovery + review + fix all safe issues
 - **Push policy:** push to main directly after each commit
@@ -17,10 +17,10 @@ _Regenerated: 2026-09-19T09:34:04Z_
 ## Office — who's in, right now
 - **Amari** (S010) — Done — README front-door rewrite: reposition the landing page around the agent-amnesia problem (…
 - **Kwame** (S011) — Done — Re-check-in after clock-out: supervisor found a file I left untracked at close (office/se…
-- **Priya** (S014) — Working — URGENT regression: supervisor reports agents fight during initialization because check-in…
+- **Priya** (S014) — Done — URGENT regression: supervisor reports agents fight during initialization because check-in…
 
 ## Current task
-- **2026-09-19 — Priya / claude-sonnet-5** — fix the check-in-first regression: core 2.0.0/2.0.1's thinned AGENTS.md dropped the standalone "check in before anything else" directive th… — *in-progress*
+- **—** — none — no session in progress — *idle*
 
 ## Backlog — High priority (the top of the queue)
 (none)
@@ -33,5 +33,5 @@ _0 medium, 1 low priority row(s) — see tasks/backlog.md_
 - plans/decisions.md (ADRs in force — respected, not relitigated): 7 entries, last added 2026-09-18
 
 ## Collaboration
-- 17 event(s) on file; most recent: `20260919T092909Z-Priya-978d9cad.json`
+- 18 event(s) on file; most recent: `20260919T093519Z-Priya-521562cd.json`
 - Full trail + rules: `memory/collaboration/README.md`; live status: `ledger-collab status --session <S> --issue <slug>`

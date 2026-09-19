@@ -30,6 +30,7 @@ its work accordingly).
 | Zuri | glm-5.3-flash | 2026-09-14 | 2026-09-14 | 1 |
 | Amari | qwen3.8-flash | 2026-09-14 | 2026-09-14 | 1 |
 | Leo | claude-sonnet-5 | 2026-09-18 | 2026-09-18 | 1 |
+| Priya | claude-sonnet-5 | 2026-09-19 | 2026-09-19 | 1 |
 
 ## Observations
 
