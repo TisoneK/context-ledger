@@ -1,0 +1,16 @@
+{
+  "schema": 1,
+  "id": "20260919T092909Z-Priya-978d9cad",
+  "type": "claim",
+  "session": "S014",
+  "agent": "Priya",
+  "created": "2026-09-19T09:29:09Z",
+  "issue": "fix-checkin-regression",
+  "body": "Restoring a standalone check-in-first directive to AGENTS.md (the weak-agent floor) and strengthening CLAUDE.md/kickoff.md's ordering emphasis — core 2.0.0/2.0.1 over-trimmed this into a pure pointer with no fallback behavior of its own.",
+  "paths": ["AGENTS.md", "CLAUDE.md", "core/templates/AGENTS.md", "core/templates/CLAUDE.md", ".context_ledger/kickoff.md", "core/templates/kickoff.md"],
+  "refs": [],
+  "option": null,
+  "selected": null,
+  "owner": null,
+  "participants": []
+}

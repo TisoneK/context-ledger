@@ -12,6 +12,6 @@ entry and backlog before starting.
 - **Status:** in-progress | done | blocked (<blocker>)
 -->
 
-- **Session:** —
-- **Task:** none — no session in progress
-- **Status:** idle
+- **Session:** 2026-09-19 — Priya / claude-sonnet-5
+- **Task:** fix the check-in-first regression: core 2.0.0/2.0.1's thinned AGENTS.md dropped the standalone "check in before anything else" directive that the pre-2.0.0 AGENTS.md carried as one of its Ten Binding Rules — restore it as the weak-agent floor without reverting the token savings
+- **Status:** in-progress
