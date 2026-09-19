@@ -54,7 +54,7 @@ is your stable session tag.
 |------|----------|-------|-------|--------|---------------|
 | Amari | S010 | qwen3.8-flash | README front-door rewrite: reposition the landing page around the agent-amnesia problem (supervisor supplied an outside review as input, not gospel) | Done | Shipped: README rewritten on main (bffbe9b), collab trail released, worktree torn down; row stays until the supervisor releases the session |
 | Kwame | S011 | qwen3.8-flash | Re-check-in after clock-out: supervisor found a file I left untracked at close (office/sessions/notes.md) — fix + flaw log | Done | Shipped: notes.md re-tracked (4a243fd), clock-out miss logged in flaws/log.md, Session 11 extended. Row stays until the supervisor releases the session |
-| Omar | S015 | claude-sonnet-5 | Supervisor report: "Agents break <20 office sessions" — investigating a failure mode affecting agents when the office is under the office_size cap (20) | Working | Just checked in, about to read kickoff.md |
+| Omar | S015 | claude-sonnet-5 | Supervisor audit: "v2 broke many things from v1" — investigated core 2.0.0's token-optimization pass beyond the check-in regression, fixed everything confirmed | Done | Shipped: core 2.0.3 released + self-hosted (145dd22, 2a2f3ff); 4 issues fixed (broken pitfalls.md reference, 2 deleted v1 rules restored, weak-agent floor extended past check-in, playbook default hardened); tests 29→40 all green. Row stays until the supervisor releases the session |
 
 **Keep your Status cells current — that is what the board is for.** The
 next live worker reads it to know at a glance what a peer has finished,

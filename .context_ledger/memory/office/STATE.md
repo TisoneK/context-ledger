@@ -5,7 +5,7 @@ at check-in and at exit. This is a DERIVED VIEW for fast orientation;
 open the file a line points at when your task needs more than the
 line gives you. Full reading order: ledger-schema.md. -->
 
-_Regenerated: 2026-09-19T11:17:21Z_
+_Regenerated: 2026-09-19T11:19:12Z_
 
 ## Standing params
 - **Core:** 2.0.3 (locked, verified 2026-09-19)
@@ -17,7 +17,7 @@ _Regenerated: 2026-09-19T11:17:21Z_
 ## Office — who's in, right now
 - **Amari** (S010) — Done — README front-door rewrite: reposition the landing page around the agent-amnesia problem (…
 - **Kwame** (S011) — Done — Re-check-in after clock-out: supervisor found a file I left untracked at close (office/se…
-- **Omar** (S015) — Working — Supervisor report: "Agents break <20 office sessions" — investigating a failure mode af…
+- **Omar** (S015) — Done — Supervisor audit: "v2 broke many things from v1" — investigated core 2.0.0's token-opti…
 
 ## Current task
 - **—** — none — no session in progress — *idle*
@@ -28,7 +28,7 @@ _Regenerated: 2026-09-19T11:17:21Z_
 _0 medium, 1 low priority row(s) — see tasks/backlog.md_
 
 ## Logs at a glance — open only if your task touches these
-- flaws/log.md (protocol/.context_ledger friction): 7 entries, last added 2026-09-19
+- flaws/log.md (protocol/.context_ledger friction): 6 entries, last added 2026-09-18
 - inefficiencies/log.md (project code/env friction): 5 entries, last added 2026-09-14
 - plans/decisions.md (ADRs in force — respected, not relitigated): 7 entries, last added 2026-09-18
 

@@ -143,3 +143,13 @@ re-seeded into the new office explicitly, and nothing else carries over.
 - **Open items:** none new — this is a captured idea, not queued work; no design decision made either way.
 - **Notes:** summary only
 - **Collab:** none — solo, office had only `Done` rows (Amari S010, Kwame S011) on arrival, no claim needed for a docs-only single-file edit outside `.context_ledger/core/`.
+
+## 2026-09-19 — Session 15
+
+- **Agent:** Omar | **Model:** claude-sonnet-5 | **Platform:** macOS 24.6.0 (Claude Code desktop app, local) | **Role:** engineer | **Core:** 2.0.2 → 2.0.3
+- **Task:** supervisor audit — "v2 broke many things from v1"; investigate core 2.0.0's token-optimization pass beyond the one check-in regression 2.0.2 already fixed, then fix everything confirmed.
+- **Commits:** 4 (36acbf3 check-in .. 2a2f3ff self-host 2.0.3) + this closeout
+- **Outcome:** done — core 2.0.3 released and self-hosted. Diffed 2.0.0-2.0.2 against v1's 1.2.0 directly; confirmed and fixed 4 issues: a shipped-broken `pitfalls.md` routing reference (3 releases old, unfixed); 2 v1 rules deleted with zero replacement ("verify before trusting", "small and current"), restored as items 11-12 of the renamed Binding Rules; AGENTS.md/CLAUDE.md's weak-agent floor only had check-in restored (2.0.2) — added the office-full close trigger, no-secrets, two-surface split, and not-done-until-pushed; playbook routing's default row silently dropped the unconditional Code Review Checklist guarantee — restored. Full findings + fix log: `flaws/log.md` (this session). Tests 29 → 40, all green; `ledger-sync verify` clean.
+- **Open items:** `ledger-mem lint --tree`'s missing exclusion for this repo's own `core/` + meta-docs (845 false-positive LEAK lines, not caused by this session) — parked as P-2026-09-19-1.
+- **Notes:** summary only
+- **Collab:** none — solo, office had only stale `Done` rows (Amari S010, Kwame S011) on arrival.
