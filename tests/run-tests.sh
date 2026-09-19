@@ -749,6 +749,73 @@ for f in "$CORE/templates/AGENTS.md" "$CORE/templates/CLAUDE.md"; do
   fi
 done
 
+# ---- weak-agent floor: the rest of the cut list (core 2.0.3) ---------------
+# 2.0.2 restored only check-in after it caused a reported collision; the
+# other ~8 rules 2.0.0 cut from AGENTS.md/CLAUDE.md were left exposed to the
+# same "weak agent reads only the floor file" failure mode with no incident
+# yet on record. This asserts the highest-severity ones (a silently-skipped
+# office-full close, a leaked secret, a mixed-surface commit) are restated
+# directly in both floor files, not only routed to kickoff.md.
+for f in "$CORE/templates/AGENTS.md" "$CORE/templates/CLAUDE.md"; do
+  if grep -qi "office_size" "$f" && grep -qi "ledger-history close" "$f"; then
+    ok "floor: $(basename "$f") states the office-full close trigger directly"
+  else
+    bad "floor: $(basename "$f") is missing the office-full close trigger"
+  fi
+  if grep -qi "no secret" "$f" && grep -q "secrets/" "$f"; then
+    ok "floor: $(basename "$f") states the no-secrets rule directly"
+  else
+    bad "floor: $(basename "$f") is missing a direct no-secrets rule"
+  fi
+  if grep -qiE "separately|never.*both|mixed" "$f" && grep -q "git add" "$f"; then
+    ok "floor: $(basename "$f") states the two-surface commit split directly"
+  else
+    bad "floor: $(basename "$f") is missing the two-surface commit split"
+  fi
+done
+
+# ---- routing table integrity: every playbook kickoff.md names must exist --
+# Regression guard for the pitfalls.md ghost reference: 2.0.0 shipped a
+# Phase 4 table row pointing at core/rules/playbooks/pitfalls.md, a file
+# that never existed (Common Pitfalls stayed inline by design). Nothing
+# caught it for three releases because no test walked the table against
+# the filesystem. This does, generically, so a future edit that names a
+# playbook file which doesn't exist on disk fails loudly instead of
+# shipping quietly.
+KICKOFF_T="$CORE/templates/kickoff.md"
+phase4_names=$(awk '/^### Phase 4/{p=1} p&&/^### Phase 5/{p=0} p' "$KICKOFF_T" \
+  | grep -oE '[A-Za-z0-9_-]+\.md' | sort -u)
+missing_playbook=0
+for name in $phase4_names; do
+  case "$name" in
+    ai-engineering-protocol*.md) continue ;;  # the editions themselves, not a playbook
+    rules.md) continue ;;  # memory/overrides/rules.md, mentioned in the same phase, not a playbook
+  esac
+  if [ ! -f "$CORE/rules/playbooks/$name" ]; then
+    bad "routing: kickoff.md Phase 4 names $name but core/rules/playbooks/$name does not exist"
+    missing_playbook=1
+  fi
+done
+[ "$missing_playbook" = 0 ] && ok "routing: every playbook kickoff.md's Phase 4 table names exists on disk"
+
+# ---- two v1 rules that were deleted, not deduplicated (core 2.0.3) --------
+# "verify before trusting" and "small and current beats big and stale" were
+# in v1's edition Rules list and had zero replacement anywhere in 2.0.0-2.0.2
+# (confirmed by grep across the whole vendored core). Asserts both editions
+# state them again.
+for f in "$CORE/rules/ai-engineering-protocol-local.md" "$CORE/rules/ai-engineering-protocol.md"; do
+  if grep -qi "codebase wins" "$f"; then
+    ok "rules: $(basename "$f") restates verify-before-trusting (codebase wins over stale memory)"
+  else
+    bad "rules: $(basename "$f") is missing verify-before-trusting"
+  fi
+  if grep -qi "small and current" "$f"; then
+    ok "rules: $(basename "$f") restates small-and-current-beats-big-and-stale"
+  else
+    bad "rules: $(basename "$f") is missing small-and-current-beats-big-and-stale"
+  fi
+done
+
 rm -rf "$SH_SCRATCH" "${PS_SCRATCH:-}" 2>/dev/null || true
 
 say ""

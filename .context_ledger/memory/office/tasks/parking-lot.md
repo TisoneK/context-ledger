@@ -42,6 +42,7 @@ causes, "the current design does X because Y".
 
 | ID | Summary |
 |----|---------|
+| P-2026-09-19-1 | `ledger-mem lint --tree` skips `.context_ledger/` but has no exclusion for this repo's own root-level `core/` (the package source, self-hosted) or its top-level meta-docs (`universal-kickoff.md`, `MIGRATION.md`, `QUICKSTART.md`, `README.md`, `designs/*.md`, `flaws/README.md`, `tests/run-tests.sh`) — all of which necessarily cite `.context_ledger/` paths because they *are* the protocol's own documentation, not product code the lint rule is meant to police. Found while running gates during Session 15's core 2.0.3 work: `lint --tree` currently reports 845 LEAK lines against this repo, up from the 87 Amari/S010 already logged (2026-09-14, still open) for just `README.md`/`AGENTS.md`. Same root cause, much bigger blast radius than previously measured — Amari's suggested fix (a `lint-exclude|<path>` line in `gates.conf`, or auto-exempting self-documenting product repos) would cover this too. Advisory only — `lint --tree` isn't in the pre-commit gate, so it's loud but non-blocking. |
 
 ## Open questions
 
