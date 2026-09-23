@@ -687,6 +687,125 @@ else
   say "  skip: UTF-8 encoding regressions (no powershell/pwsh on PATH)"
 fi
 
+# ---- Windows port health (core 2.0.4) ---------------------------------------
+# 2.0.3 shipped ledger-state.ps1 with two defects a Windows session could not
+# work around, because ledger-sync verify (and every gate that calls it) exits
+# 3 on a port it cannot parse:
+#   * `"\*\*$Label:"` -- $Label: inside a double-quoted string reads as a
+#     scope-qualified variable reference, which NO PowerShell engine accepts;
+#   * non-ASCII bytes -- Windows PowerShell 5.1 decodes a BOM-less script with
+#     the *system codepage*, so a UTF-8 em-dash (E2 80 94) becomes U+201D,
+#     which the parser reads as a string terminator; pwsh 7 parses the very
+#     same bytes fine (so the defect stayed invisible on a pwsh-only host).
+# Three assertions:
+#   (a) the shipped ports are pure ASCII -- the engine-free half of the rule,
+#       and the half that also holds on a host with no PowerShell at all;
+#   (b) every port parses under EVERY engine on PATH (each engine runs the ps1
+#       verify, whose Parse-Ports walks bin/ledger-*.ps1);
+#   (c) sh verify rejects a port carrying a non-ASCII byte (the guard), with
+#       the tree otherwise manifest-clean so only the guard can fire.
+PORTS_SCRATCH=${TMPDIR:-/tmp}/ledger-test-ports
+rm -rf "$PORTS_SCRATCH"
+mkdir -p "$PORTS_SCRATCH/pkg"
+cp -R "$CORE" "$PORTS_SCRATCH/pkg/core"
+PORTS_CORE=$PORTS_SCRATCH/pkg/core
+
+NA_BYTES=$(for _f in "$CORE"/bin/*.ps1; do LC_ALL=C tr -d '\11\12\15\40-\176' < "$_f"; done | wc -c | tr -d ' ')
+if [ "$NA_BYTES" = "0" ]; then
+  ok "ports: core/bin/*.ps1 are pure ASCII (5.1-safe on any system codepage)"
+else
+  bad "ports: $NA_BYTES non-ASCII byte(s) in core/bin/*.ps1 -- 5.1 will mis-decode them"
+fi
+
+for _eng in powershell pwsh; do
+  command -v "$_eng" >/dev/null 2>&1 || continue
+  if command -v cygpath >/dev/null 2>&1; then
+    PORTS_SYNC_W=$(cygpath -w "$PORTS_CORE/bin/ledger-sync.ps1")
+  else
+    PORTS_SYNC_W=$PORTS_CORE/bin/ledger-sync.ps1
+  fi
+  if "$_eng" -NoProfile -ExecutionPolicy Bypass -File "$PORTS_SYNC_W" verify > "$PORTS_SCRATCH/.test-out.log" 2>&1; then
+    ok "ports: every port parses under $_eng"
+  else
+    bad "ports: a port fails to parse under $_eng"
+    tail -n 5 "$PORTS_SCRATCH/.test-out.log"
+  fi
+done
+
+printf '# probe \342\200\224\n' >> "$PORTS_CORE/bin/ledger-gates.ps1"
+sh "$PORTS_CORE/bin/ledger-sync" manifest >/dev/null 2>&1
+sh "$PORTS_CORE/bin/ledger-sync" verify > "$PORTS_SCRATCH/.test-out.log" 2>&1
+_rc=$?
+if [ "$_rc" -eq 3 ] && grep -q "ps1 encoding:" "$PORTS_SCRATCH/.test-out.log"; then
+  ok "ports: sh verify rejects a non-ASCII ps1 byte (encoding guard, rc=3)"
+else
+  bad "ports: encoding guard did not fire (rc=$_rc, want 3)"
+  tail -n 5 "$PORTS_SCRATCH/.test-out.log"
+fi
+rm -rf "$PORTS_SCRATCH" 2>/dev/null || true
+
+# ---- state digest: sh and ps1 emit the same bytes (core 2.0.4) ---------------
+# The ps1 port builds STATE.md from the same strings the sh port writes, so the
+# two must stay byte-identical -- em-dashes included. That is what forces the
+# code-point form in the port: a literal em-dash in a ps1 source cannot survive
+# Windows PowerShell 5.1's BOM-less decoding, and swapping it for a plain
+# hyphen diverges from the sh port (exactly the drift the Core block had).
+if [ -n "$PS_BIN" ]; then
+  ST_SCRATCH=${TMPDIR:-/tmp}/ledger-test-state
+  rm -rf "$ST_SCRATCH"
+  mkdir -p "$ST_SCRATCH/.context_ledger/memory/office/agents" \
+           "$ST_SCRATCH/.context_ledger/memory/office/tasks" \
+           "$ST_SCRATCH/.context_ledger/memory/workflows"
+  cp -R "$CORE" "$ST_SCRATCH/.context_ledger/core"
+  cat > "$ST_SCRATCH/.context_ledger/memory/office/agents/roster.md" <<'EOF'
+| Name | Codename | Model | Doing | Status | Status detail |
+|------|----------|-------|-------|--------|---------------|
+| Ada | S001 | m1 | parity probe | Working | Phase 2, Step 9 |
+EOF
+  cat > "$ST_SCRATCH/.context_ledger/memory/office/tasks/current.md" <<'EOF'
+- **Session:** probe -- Ada / m1
+- **Task:** parity probe
+- **Status:** in-progress
+EOF
+  cat > "$ST_SCRATCH/.context_ledger/memory/office/tasks/backlog.md" <<'EOF'
+### High Priority
+
+| ID | Summary |
+|----|---------|
+| B-2026-09-23-1 | probe row |
+EOF
+  printf '# active\n- **Target:** probe\n- **Scope:** probe\n- **Push policy:** push\n' \
+    > "$ST_SCRATCH/.context_ledger/memory/workflows/active.md"
+  printf 'version=2.0.4\nverified=2026-09-23\n' > "$ST_SCRATCH/.context_ledger/memory/core.lock"
+
+  ST_OUT=$ST_SCRATCH/.context_ledger/memory/office/STATE.md
+  rm -f "$ST_OUT"
+  sh "$ST_SCRATCH/.context_ledger/core/bin/ledger-state" generate >/dev/null 2>&1
+  _sh_ok=$([ -s "$ST_OUT" ] && echo 1 || echo 0)
+  if [ "$_sh_ok" = "1" ]; then grep -v '^_Regenerated:' "$ST_OUT" > "$ST_SCRATCH/.state-sh.n"; fi
+  if command -v cygpath >/dev/null 2>&1; then
+    ST_PS_W=$(cygpath -w "$ST_SCRATCH/.context_ledger/core/bin/ledger-state.ps1")
+  else
+    ST_PS_W=$ST_SCRATCH/.context_ledger/core/bin/ledger-state.ps1
+  fi
+  rm -f "$ST_OUT"
+  "$PS_BIN" -NoProfile -ExecutionPolicy Bypass -File "$ST_PS_W" generate >/dev/null 2>&1
+  _ps_ok=$([ -s "$ST_OUT" ] && echo 1 || echo 0)
+  if [ "$_ps_ok" = "1" ]; then grep -v '^_Regenerated:' "$ST_OUT" > "$ST_SCRATCH/.state-ps.n"; fi
+  # guard against a vacuous pass: both ports must have written a digest
+  if [ "$_sh_ok" != "1" ] || [ "$_ps_ok" != "1" ]; then
+    bad "state: a port wrote no STATE.md (sh=$_sh_ok ps=$_ps_ok) -- parity not proven"
+  elif diff "$ST_SCRATCH/.state-sh.n" "$ST_SCRATCH/.state-ps.n" > "$ST_SCRATCH/.test-out.log" 2>&1; then
+    ok "state: ps1 writes a STATE.md byte-identical to the sh port's (dashes included)"
+  else
+    bad "state: ps1 STATE.md differs from the sh port's"
+    head -n 6 "$ST_SCRATCH/.test-out.log"
+  fi
+  rm -rf "$ST_SCRATCH" 2>/dev/null || true
+else
+  say "  skip: STATE.md sh/ps1 parity (no powershell/pwsh on PATH)"
+fi
+
 # ---- ledger-sync harvest: office-era log paths ------------------------------
 # Since core 1.0.0 the flaw/inefficiency logs live under memory/office/;
 # harvest (package-mode, sh-only) must read the office layout or it collects
