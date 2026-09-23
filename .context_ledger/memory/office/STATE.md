@@ -5,10 +5,10 @@ at check-in and at exit. This is a DERIVED VIEW for fast orientation;
 open the file a line points at when your task needs more than the
 line gives you. Full reading order: ledger-schema.md. -->
 
-_Regenerated: 2026-09-19T11:19:12Z_
+_Regenerated: 2026-09-23T04:16:45Z_
 
 ## Standing params
-- **Core:** 2.0.3 (locked, verified 2026-09-19)
+- **Core:** 2.0.4 (locked, verified 2026-09-23)
 - **Target:** general sweep unless the user's chat message names a task
 - **Scope:** discovery + review + fix all safe issues
 - **Push policy:** push to main directly after each commit
@@ -17,7 +17,8 @@ _Regenerated: 2026-09-19T11:19:12Z_
 ## Office — who's in, right now
 - **Amari** (S010) — Done — README front-door rewrite: reposition the landing page around the agent-amnesia problem (…
 - **Kwame** (S011) — Done — Re-check-in after clock-out: supervisor found a file I left untracked at close (office/se…
-- **Omar** (S015) — Done — Supervisor audit: "v2 broke many things from v1" — investigated core 2.0.0's token-opti…
+- **Omar** (S015) — Done — Supervisor audit: "v2 broke many things from v1" — investigated core 2.0.0's token-optimi…
+- **Ilya** (S016) — Done — Fix the 2.0.3 ps1 ports that made Windows sessions fail their exit gate
 
 ## Current task
 - **—** — none — no session in progress — *idle*
@@ -28,10 +29,10 @@ _Regenerated: 2026-09-19T11:19:12Z_
 _0 medium, 1 low priority row(s) — see tasks/backlog.md_
 
 ## Logs at a glance — open only if your task touches these
-- flaws/log.md (protocol/.context_ledger friction): 6 entries, last added 2026-09-18
+- flaws/log.md (protocol/.context_ledger friction): 8 entries, last added 2026-09-23
 - inefficiencies/log.md (project code/env friction): 5 entries, last added 2026-09-14
-- plans/decisions.md (ADRs in force — respected, not relitigated): 7 entries, last added 2026-09-18
+- plans/decisions.md (ADRs in force — respected, not relitigated): 8 entries, last added 2026-09-23
 
 ## Collaboration
-- 18 event(s) on file; most recent: `20260919T093519Z-Priya-521562cd.json`
+- 20 event(s) on file; most recent: `20260923T041644Z-Ilya-0d886cf4.json`
 - Full trail + rules: `memory/collaboration/README.md`; live status: `ledger-collab status --session <S> --issue <slug>`

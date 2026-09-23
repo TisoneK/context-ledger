@@ -153,3 +153,13 @@ re-seeded into the new office explicitly, and nothing else carries over.
 - **Open items:** `ledger-mem lint --tree`'s missing exclusion for this repo's own `core/` + meta-docs (845 false-positive LEAK lines, not caused by this session) — parked as P-2026-09-19-1.
 - **Notes:** summary only
 - **Collab:** none — solo, office had only stale `Done` rows (Amari S010, Kwame S011) on arrival.
+
+## 2026-09-23 — Session 16
+
+- **Agent:** Ilya | **Model:** deepseek/deepseek-flash | **Platform:** Windows (win32 10.0.26200 x64, Git Bash; Windows PowerShell 5.1.26100.9444 + pwsh 7.6.6) | **Role:** engineer | **Core:** 2.0.3 → 2.0.4
+- **Task:** fix the 2.0.3 PowerShell ports that made `ledger-sync verify` exit 3 on Windows — so every gate that calls it failed and no Windows session could pass its exit gate. Reported upstream by a consumer project on its first 2.0.3 migration.
+- **Commits:** 4 + this closeout (a9bd131 check-in .. 651a778 self-host 2.0.4)
+- **Outcome:** done — core 2.0.4 released (efb9665) and self-hosted (651a778). Three root causes fixed: `ledger-state.ps1` built a regex with `$Label:`, which parses as a scope-qualified variable reference and made the file unparseable on *both* engines; non-ASCII bytes in a BOM-less ps1 are a 5.1-only failure (5.1 decodes with the system codepage, so a UTF-8 em-dash becomes U+201D, a string terminator, while pwsh 7 parses the same bytes) — all seven ports are pure ASCII now and emit non-ASCII from code points, keeping artifacts byte-identical to the sh ports; `parse_ports` checked one engine only and preferred 5.1, so a pwsh-only-parseable port passed verification and then failed under the `.cmd` launchers. An engine-free encoding guard (both editions) plus an every-engine parse check make the class detectable on any host, the authoring OS included. Also closed a pre-existing drift: `ledger-state.ps1` wrote a hyphen where sh writes an em-dash in five places. Suite 60 → 63 green (four new tests); verify exits 0 under sh, pwsh 7 and 5.1; STATE.md byte-identical across all three.
+- **Open items:** ps1 help/message text still diverges from sh across the other six ports (parking lot, needs a decision); the consumer's CRLF-diagnosis report not reproducible on 2.0.4 in either port (parking lot, open question with evidence); this repo's `gates.conf` has no project commands, so no gate runs the package suite (parking lot).
+- **Notes:** summary only — the full write-up is `reviews/2026-09-23-review.md`.
+- **Collab:** none — solo; office had no live peer and `current.md` was idle. Claim + release emitted under `S016` / `windows-ports-2.0.4` at close (claim 33e539f), the session's own record being what a later arrival reads.

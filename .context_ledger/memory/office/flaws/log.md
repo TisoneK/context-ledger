@@ -80,3 +80,12 @@ names them), and roll-up candidates.
 - **Suggested fix:** package: extend `check_roster_stale` (or add a sibling check) to also flag a roster row whose codename has NO corresponding session entry after N commits/days have passed since the row's own check-in commit — "live with no matching duty-log entry ever" is a distinct signal from "duty-log entry exists but row wasn't removed," and both are forgotten-clock-outs. Until then, the only tell is manual: no worktree, no branch, no Session N entry, and asking the supervisor.
 - **Status:** open — the stale row itself is fixed (removed this session); the `check_roster_stale` gap above is a tooling suggestion for a future patch.
 
+---
+## 2026-09-23 — Ilya / deepseek/deepseek-flash (Session 16)
+
+- **Flaw:** the entrance rule ("check in first — before the deep read, before any analysis") contains no sync step, so a session that opens on a stale clone signs a board that is several sessions out of date. I read a roster whose newest row was S011 and took S012; origin was already past S015, the check-in push was rejected, and the rebase landed a conflict inside `office/agents/roster.md` with a peer's row in it.
+- **Symptom:** codename claimed off a stale board; `git push` rejected (non-fast-forward) on the check-in commit; a roster rebase conflict to hand-resolve (keep the peer's row, renumber mine) before any product work started. The session's first push went to bookkeeping.
+- **Root cause:** the phase order is sync (Phase 1) then check-in (Phase 2), but the entrance rule is worded to make signing the *first* write and reads as if the board it names is current. The "push claims the codename" rule absorbed the collision correctly — at the cost of a rejected push and a conflict a fetch would have prevented.
+- **Suggested fix:** package: say in `AGENTS.md`/`kickoff.md` Phase 2 that the check-in's first step is `git fetch` + `git pull --ff-only` on an otherwise-clean tree — a sync is not "analysis", so it does not violate sign-before-the-deep-read, and it makes the board being signed the real one. (Kin to the parked atomic-`ledger-checkin` idea, P-2026-09-18-1.)
+- **Status:** open — worked around this session (fetched, rebased, renumbered to S016); not implemented in the package.
+
