@@ -1,0 +1,16 @@
+{
+  "schema": 1,
+  "id": "20260923T041120Z-Ilya-564e4abd",
+  "type": "claim",
+  "session": "S016",
+  "agent": "Ilya",
+  "created": "2026-09-23T04:11:20Z",
+  "issue": "windows-ports-2.0.4",
+  "body": "Fix the 2.0.3 ps1 port defects so a Windows session can pass its exit gate. Solo session - office had no live peer and current.md was idle; the claim is recorded at close with the work already landed.",
+  "paths": ["core/bin", "core/VERSION", "core/CHANGELOG.md", "core/MANIFEST.sha256", "tests/run-tests.sh", "tests/README.md"],
+  "refs": [],
+  "option": null,
+  "selected": null,
+  "owner": null,
+  "participants": []
+}
