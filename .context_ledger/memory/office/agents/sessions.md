@@ -163,3 +163,13 @@ re-seeded into the new office explicitly, and nothing else carries over.
 - **Open items:** ps1 help/message text still diverges from sh across the other six ports (parking lot, needs a decision); the consumer's CRLF-diagnosis report not reproducible on 2.0.4 in either port (parking lot, open question with evidence); this repo's `gates.conf` has no project commands, so no gate runs the package suite (parking lot).
 - **Notes:** summary only — the full write-up is `reviews/2026-09-23-review.md`.
 - **Collab:** none — solo; office had no live peer and `current.md` was idle. Claim + release emitted under `S016` / `windows-ports-2.0.4` at close (claim 33e539f), the session's own record being what a later arrival reads.
+
+## 2026-10-03 — Session 17
+
+- **Agent:** Tomas | **Model:** claude-sonnet-5-5 | **Platform:** macOS 24.6.0 (Claude Code desktop app, local) | **Role:** engineer | **Core:** 2.0.4 at arrival (checkout was on 2.0.3 until the rebase) -> 2.1.0
+- **Task:** supervisor question "is your core outdated?", which became: `ledger-sync status` must compare the update source with its upstream, and log the source so `update` knows where it fetches from.
+- **Commits:** 3 (8bd9634 check-in .. 59a0de0 release 2.1.0 .. 9c16162 self-host) + this closeout
+- **Outcome:** done on the sh edition -- core 2.1.0 released and self-hosted. `status` fetches the source clone's origin and reports in-sync/behind/ahead/diverged/unreachable before any "up to date"; the resolved source is written to `core.lock` (`source_*`) and read first by `update`/`migrate`, which refuse a stale clone (`--from-upstream`, `--allow-stale`), fall back to a shallow clone of `source_url`, and record `installed_*`. Found and fixed while testing: a stale clone at the project's own version said "nothing to do" -- the stale check now runs before the same-version shortcut. Suite 42 -> 59 on the sh edition (17 new). Verified live against the real GitHub origin after self-hosting. **The PowerShell port is written but has never run** (no engine on this machine); it is ASCII-clean and brace-balanced only.
+- **Open items:** B-2026-10-03-1 (Windows pass of the ps1 port, High); P-2026-10-03-1 (absolute paths in tracked `core.lock`). Flaws logged: the status gap (resolved) and a repeat of the stale-clone-at-check-in flaw (open).
+- **Notes:** summary only
+- **Collab:** none -- solo; office held only `Done` rows. Check-in collided with Ilya on S016 (stale clone), renumbered to S017. The auto-mode classifier blocked one chained rebase/amend/push; stopped, asked, and finished on the supervisor's go-ahead.

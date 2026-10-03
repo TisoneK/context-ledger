@@ -64,6 +64,7 @@ Full spec: `.context_ledger/core/schemas/ledger-schema.md` →
 
 | ID | Summary |
 |----|---------|
+| B-2026-10-03-1 | Run core 2.1.0's PowerShell port on a Windows box (5.1 via the `.cmd` launcher and pwsh 7): `ledger-sync status`, `status --no-record`, `update --from-upstream`, then `sh tests/run-tests.sh` there (the gated ps1 provenance test). The port was written with no engine on hand and has never run; fix whatever breaks and log it. |
 
 ### Medium Priority
 
