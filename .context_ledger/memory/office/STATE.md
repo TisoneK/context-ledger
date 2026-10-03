@@ -5,10 +5,10 @@ at check-in and at exit. This is a DERIVED VIEW for fast orientation;
 open the file a line points at when your task needs more than the
 line gives you. Full reading order: ledger-schema.md. -->
 
-_Regenerated: 2026-10-03T18:02:15Z_
+_Regenerated: 2026-10-03T19:16:00Z_
 
 ## Standing params
-- **Core:** 2.1.0 (locked, verified 2026-10-03)
+- **Core:** 2.0.5 (locked, verified 2026-10-03)
 - **Target:** general sweep unless the user's chat message names a task
 - **Scope:** discovery + review + fix all safe issues
 - **Push policy:** push to main directly after each commit
@@ -24,7 +24,7 @@ _Regenerated: 2026-10-03T18:02:15Z_
 - **—** — none — no session in progress — *idle*
 
 ## Backlog — High priority (the top of the queue)
-| B-2026-10-03-1 | Run core 2.1.0's PowerShell port on a Windows box (5.1 via the `.cmd` launcher and pwsh 7): `ledger-sync status`, `status --no-record`, `update --from-upstream`, then `sh tests/run-tests.sh` there (the gated ps1 provenance test). The port was written with no engine on hand and has never run; fix whatever breaks and log it. |
+| B-2026-10-03-1 | Run core 2.0.5's PowerShell port on a Windows box (5.1 via the `.cmd` launcher and pwsh 7): `ledger-sync status`, `status --no-record`, `update --from-upstream`, then `sh tests/run-tests.sh` there (the gated ps1 provenance test). The port was written with no engine on hand and has never run; fix whatever breaks and log it. |
 
 _0 medium, 1 low priority row(s) — see tasks/backlog.md_
 
