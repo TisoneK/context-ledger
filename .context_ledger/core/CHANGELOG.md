@@ -10,6 +10,67 @@ bump MINOR; wording and fixes bump PATCH.
 
 ---
 
+## 2.0.5 — 2026-10-03
+
+*Numbering: this was first pushed as 2.1.0 and renumbered within the hour, before
+any known host took it — it fixes a defect (`status` never checked upstream), so it is a
+PATCH. A project that did sync to 2.1.0 cannot `update` down to 2.0.5
+(`ledger-sync` refuses a downgrade); it takes the next release instead.*
+
+**`ledger-sync status` now compares the update source with upstream, and
+records where the core comes from.** Until now `status` only looked at a
+local sibling clone, so a clone that had not been fetched read "up to
+date" while origin was a release ahead — a host session found its core
+outdated only by reading origin's log. And nothing said whether an
+upgrade came from a published release or from someone's unpushed clone.
+
+- **`status` compares first.** Before reporting, it fetches the source
+  clone's `origin` branch (into `FETCH_HEAD` only — the clone's working
+  tree and branches are never touched) and reports one of: in sync,
+  BEHIND upstream (with the upstream core version, which becomes the
+  target — "UPDATE AVAILABLE" no longer depends on the clone being
+  fresh), AHEAD of upstream (a local-only core), DIVERGED, UNREACHABLE
+  (never printed as "up to date"), or no remote. Uncommitted edits to the
+  source's `core/` count as local.
+- **`status` logs the source.** The resolved source is written to
+  `memory/core.lock` as `source_kind` / `source_state` / `source_url` /
+  `source_path` / `source_ref` / `source_commit` / `source_version` /
+  `source_checked`. The write is skipped when only the date would change,
+  so a repeated `status` leaves a clean tree; `status --no-record` never
+  writes.
+- **`update` and `migrate` read the record.** Source lookup order is: an
+  explicit path, the recorded `source_path`, `LEDGER_PKG`, the sibling
+  guesses, and finally a shallow clone of the recorded `source_url`
+  (also `--upstream URL` or `LEDGER_UPSTREAM`) — so a host with no clone
+  can still update from upstream. The stale check runs *before* the
+  same-version shortcut: a clone behind upstream no longer answers
+  "already at X — nothing to do" while a release exists. It refuses unless
+  you pass `--from-upstream` (install straight from origin) or
+  `--allow-stale`; a local-only or unverified source installs with a
+  warning.
+- **`update` records the upgrade.** `installed_version`,
+  `installed_from_version`, `installed_kind` (`upstream`/`local`/
+  `unverified`), `installed_url`, `installed_path`, `installed_commit`,
+  `installed_on` — so a host can tell what it was upgraded from. `verify`
+  and `lock` re-write `core.lock` but preserve both groups.
+- Offline or CI: `LEDGER_OFFLINE=1` skips the network (the source reads
+  as unreachable/unverified).
+
+Migration: none. A `core.lock` without the new keys is read as "no
+record yet"; the first `status` writes one.
+
+Package tests: 59 green on the sh edition, 17 new (stale/in-sync/ahead/
+offline states, the recorded fields, no churn on re-run, `--no-record`,
+the stale refusal and its remedy, `--from-upstream` install provenance,
+and provenance surviving a re-lock). **The PowerShell port of all of this
+(`ledger-sync.ps1`) was written without a PowerShell engine on the
+authoring machine and has not been run** — it is ASCII-clean and brace-
+balanced, and one gated test exercises its status path where an engine
+exists; a Windows pass should run `status`, `status --no-record`, and
+`update --from-upstream` before this is trusted there.
+
+---
+
 ## 2.0.4 — 2026-09-23
 
 **Windows sessions could not pass their exit gate at all.** 2.0.3 shipped
