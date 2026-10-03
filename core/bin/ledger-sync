@@ -114,7 +114,7 @@ find_source() { # echoes a core dir, or nothing. $1 = optional explicit source
     source_core_dir "$1" || die "not a package clone or core tree: $1"
     return
   fi
-  # the source a previous status/update recorded (core 2.1.0) beats guessing
+  # the source a previous status/update recorded (core 2.0.5) beats guessing
   _rp=$(lock_get source_path 2>/dev/null)
   [ -n "$_rp" ] && source_core_dir "$_rp" 2>/dev/null && return
   [ -n "${LEDGER_PKG:-}" ] && source_core_dir "$LEDGER_PKG" && return
@@ -170,7 +170,7 @@ normalize_lf() {
 write_lock() { # $1 = version
   [ "$MODE" = project ] || return 0
   mkdir -p "$MEMORY_DIR"
-  # source_* / installed_* are provenance (core 2.1.0): a re-lock must not
+  # source_* / installed_* are provenance (core 2.0.5): a re-lock must not
   # drop them, or every verify would erase where the core came from.
   _keep=""
   [ -f "$MEMORY_DIR/core.lock" ] && _keep=$(grep -E '^(source_|installed_)' "$MEMORY_DIR/core.lock" | tr -d '\r')
@@ -212,7 +212,7 @@ fleet_register() {
   printf '%s  bootstrapped=%s  core=%s\n' "$1" "$(date +%Y-%m-%d)" "$2" >> "$FF"
 }
 
-# --- source provenance (core 2.1.0) ------------------------------------------
+# --- source provenance (core 2.0.5) ------------------------------------------
 # status records WHERE the core would come from, update records where it DID
 # come from, both in memory/core.lock as source_* / installed_* lines. Before
 # this, a stale sibling clone read "up to date" while origin was releases

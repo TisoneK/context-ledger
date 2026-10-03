@@ -139,7 +139,7 @@ function Find-Source { # $explicit -> core dir or $null
     if (-not $d) { Die "not a package clone or core tree: $explicit" }
     return $d
   }
-  # the source a previous status/update recorded (core 2.1.0) beats guessing
+  # the source a previous status/update recorded (core 2.0.5) beats guessing
   $rp = Lock-Get 'source_path'
   if ($rp -and (Test-Path -LiteralPath $rp)) {
     $d = Source-Core-Dir $rp
@@ -228,7 +228,7 @@ function Write-Lock { # $version
   # this file (ps1 string literals stay pure ASCII). WriteAllText keeps UTF-8
   # without a BOM.
   $em = [string][char]0x2014
-  # source_* / installed_* are provenance (core 2.1.0): a re-lock must not
+  # source_* / installed_* are provenance (core 2.0.5): a re-lock must not
   # drop them, or every verify would erase where the core came from.
   $keep = @(Lock-Lines '^(source_|installed_)')
   $body = (@(
@@ -250,7 +250,7 @@ function Lock-Version {
   return ''
 }
 
-# --- source provenance (core 2.1.0) ------------------------------------------
+# --- source provenance (core 2.0.5) ------------------------------------------
 # status records WHERE the core would come from, update records where it DID
 # come from, both in memory/core.lock as source_* / installed_* lines. Before
 # this, a stale sibling clone read "up to date" while origin was releases

@@ -10,7 +10,12 @@ bump MINOR; wording and fixes bump PATCH.
 
 ---
 
-## 2.1.0 — 2026-10-03
+## 2.0.5 — 2026-10-03
+
+*Numbering: this was first pushed as 2.1.0 and renumbered within the hour, before
+any known host took it — it fixes a defect (`status` never checked upstream), so it is a
+PATCH. A project that did sync to 2.1.0 cannot `update` down to 2.0.5
+(`ledger-sync` refuses a downgrade); it takes the next release instead.*
 
 **`ledger-sync status` now compares the update source with upstream, and
 records where the core comes from.** Until now `status` only looked at a

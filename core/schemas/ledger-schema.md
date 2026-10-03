@@ -675,7 +675,7 @@ cannot pick the wrong edition (the kickoff routes by type).
 - **core.lock:** after any successful `verify`, `ledger-sync` records
   the version + date in `memory/core.lock`. That is the
   **last-known-good** marker.
-- **Source provenance (core 2.1.0):** `ledger-sync status` compares the
+- **Source provenance (core 2.0.5):** `ledger-sync status` compares the
   update source — a sibling clone, `LEDGER_PKG`, or a path — with that
   clone's own upstream (`origin`) *before* it reports. A clone that is
   behind upstream is reported as stale and never as "up to date"; one

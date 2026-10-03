@@ -936,7 +936,7 @@ for f in "$CORE/rules/ai-engineering-protocol-local.md" "$CORE/rules/ai-engineer
 done
 
 
-# ---- source provenance: status compares with upstream, update records it (core 2.1.0) ----
+# ---- source provenance: status compares with upstream, update records it (core 2.0.5) ----
 # A stale sibling clone used to read "up to date" while origin was releases
 # ahead, and nothing recorded where an upgrade came from. Builds a bare
 # upstream, a stale clone of it, and a host project vendoring the older core.
