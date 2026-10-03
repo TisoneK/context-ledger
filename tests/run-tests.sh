@@ -935,6 +935,99 @@ for f in "$CORE/rules/ai-engineering-protocol-local.md" "$CORE/rules/ai-engineer
   fi
 done
 
+
+# ---- source provenance: status compares with upstream, update records it (core 2.1.0) ----
+# A stale sibling clone used to read "up to date" while origin was releases
+# ahead, and nothing recorded where an upgrade came from. Builds a bare
+# upstream, a stale clone of it, and a host project vendoring the older core.
+SRC_ROOT=${TMPDIR:-/tmp}/ledger-test-src
+rm -rf "$SRC_ROOT"; mkdir -p "$SRC_ROOT"
+GIT="git -c user.name=t -c user.email=t@t"
+git init -q --bare "$SRC_ROOT/up.git"
+git clone -q "$SRC_ROOT/up.git" "$SRC_ROOT/pkgA" 2>/dev/null
+cp -R "$CORE" "$SRC_ROOT/pkgA/core"
+echo 9.0.0 > "$SRC_ROOT/pkgA/core/VERSION"
+sh "$SRC_ROOT/pkgA/core/bin/ledger-sync" manifest >/dev/null 2>&1
+$GIT -C "$SRC_ROOT/pkgA" add -A && $GIT -C "$SRC_ROOT/pkgA" commit -qm v900
+$GIT -C "$SRC_ROOT/pkgA" branch -M main
+git -C "$SRC_ROOT/pkgA" push -q origin main 2>/dev/null
+# the host vendors 9.0.0 (a copy of pkgA's core) in a project dir with no sibling-name clash
+HOST=$SRC_ROOT/host
+mkdir -p "$HOST/.context_ledger/memory"
+cp -R "$SRC_ROOT/pkgA/core" "$HOST/.context_ledger/core"
+git -C "$HOST" -c init.defaultBranch=main init -q 2>/dev/null || git -C "$HOST" init -q
+HSYNC="sh $HOST/.context_ledger/core/bin/ledger-sync"
+LOCK=$HOST/.context_ledger/memory/core.lock
+$HSYNC lock >/dev/null 2>&1
+# upstream publishes 9.0.1 from a second clone; pkgA stays stale at 9.0.0
+git clone -q "$SRC_ROOT/up.git" "$SRC_ROOT/pkgB" 2>/dev/null
+echo 9.0.1 > "$SRC_ROOT/pkgB/core/VERSION"
+sh "$SRC_ROOT/pkgB/core/bin/ledger-sync" manifest >/dev/null 2>&1
+$GIT -C "$SRC_ROOT/pkgB" add -A && $GIT -C "$SRC_ROOT/pkgB" commit -qm v901
+git -C "$SRC_ROOT/pkgB" push -q origin HEAD:main 2>/dev/null
+UP_SHA=$(git -C "$SRC_ROOT/pkgB" rev-parse HEAD)
+
+lockv() { sed -n "s/^$1=//p" "$LOCK" | head -n1; }
+out=$(LEDGER_PKG="$SRC_ROOT/pkgA" $HSYNC status --no-record 2>&1)
+case $out in *"BEHIND upstream"*"UPDATE AVAILABLE"*) ok "src: a stale clone is reported BEHIND upstream with the update available" ;; *) bad "src: stale clone not reported behind"; say "$out" ;; esac
+case $out in *"up to date"*) bad "src: stale clone still says up to date" ;; *) ok "src: a stale clone never says up to date" ;; esac
+[ -z "$(lockv source_state)" ] && ok "src: status --no-record leaves core.lock without a source record" || bad "src: --no-record wrote a source record"
+
+LEDGER_PKG="$SRC_ROOT/pkgA" $HSYNC status >/dev/null 2>&1
+[ "$(lockv source_state)" = behind ] && [ "$(lockv source_kind)" = upstream ] && [ "$(lockv source_path)" = "$(git -C "$SRC_ROOT/pkgA" rev-parse --show-toplevel)" ] \
+  && ok "src: status records state=behind, kind=upstream and the clone path" || { bad "src: source record wrong"; cat "$LOCK"; }
+[ "$(lockv source_version)" = 9.0.1 ] && [ "$(lockv source_commit)" = "$UP_SHA" ] \
+  && ok "src: the record carries the upstream version and commit it saw" || bad "src: record has wrong upstream version/commit"
+[ -n "$(lockv source_url)" ] && ok "src: the record carries the source url update will fetch from" || bad "src: no source_url recorded"
+sum1=$(grep -v '^source_checked=\|^verified=' "$LOCK" | cksum)
+LEDGER_PKG="$SRC_ROOT/pkgA" $HSYNC status >/dev/null 2>&1
+sum2=$(grep -v '^source_checked=\|^verified=' "$LOCK" | cksum)
+[ "$sum1" = "$sum2" ] && ok "src: an unchanged re-run does not churn the lock" || bad "src: lock churned on identical re-run"
+
+# the PowerShell port reads the same record and compares with upstream the same way
+if [ -n "${PS_BIN:-}" ]; then
+  PS_SYNC=$HOST/.context_ledger/core/bin/ledger-sync.ps1
+  if command -v cygpath >/dev/null 2>&1; then PS_SYNC=$(cygpath -w "$PS_SYNC"); fi
+  out=$(LEDGER_PKG="$SRC_ROOT/pkgA" "$PS_BIN" -NoProfile -ExecutionPolicy Bypass -File "$PS_SYNC" status --no-record 2>&1)
+  case $out in *"BEHIND upstream"*"UPDATE AVAILABLE"*) ok "src: ps1 reports a stale clone BEHIND upstream with the update available" ;; *) bad "src: ps1 stale-clone status"; say "$out" ;; esac
+else
+  say "  skip: ps1 source-provenance status (no powershell/pwsh on PATH)"
+fi
+
+$HSYNC verify >/dev/null 2>&1
+[ "$(lockv source_state)" = behind ] && ok "src: verify's re-lock keeps the source record" || bad "src: verify erased the source record"
+
+# update refuses to install from the stale clone, and says how to proceed
+out=$(LEDGER_PKG="$SRC_ROOT/pkgA" $HSYNC update 2>&1); rc=$?
+if [ "$rc" -ne 0 ]; then case $out in *"behind upstream"*"--from-upstream"*) ok "src: update refuses a stale clone and names --from-upstream" ;; *) bad "src: refusal message lacks the remedy"; say "$out" ;; esac
+else bad "src: update installed from a stale clone"; fi
+[ "$(core_v=$(head -n1 "$HOST/.context_ledger/core/VERSION"); echo "$core_v")" = 9.0.0 ] && ok "src: the refused update left core untouched" || bad "src: core changed despite refusal"
+
+# --from-upstream installs from origin and records the provenance
+out=$(LEDGER_PKG="$SRC_ROOT/pkgA" $HSYNC update --from-upstream 2>&1); rc=$?
+if [ "$rc" -eq 0 ] && [ "$(head -n1 "$HOST/.context_ledger/core/VERSION")" = 9.0.1 ]; then ok "src: update --from-upstream installs the upstream release"; else bad "src: --from-upstream failed (rc=$rc)"; say "$out"; fi
+[ "$(lockv installed_kind)" = upstream ] && [ "$(lockv installed_commit)" = "$UP_SHA" ] && [ "$(lockv installed_from_version)" = 9.0.0 ] \
+  && ok "src: installed_* records kind=upstream, the upstream commit and the version it replaced" || { bad "src: installed record wrong"; cat "$LOCK"; }
+sh "$HOST/.context_ledger/core/bin/ledger-sync" verify >/dev/null 2>&1
+[ "$(sed -n 's/^installed_kind=//p' "$LOCK")" = upstream ] && ok "src: the install record survives later verify/lock" || bad "src: install record lost on re-lock"
+
+# in sync once the clone catches up
+git -C "$SRC_ROOT/pkgA" pull -q --ff-only origin main 2>/dev/null
+out=$(LEDGER_PKG="$SRC_ROOT/pkgA" sh "$HOST/.context_ledger/core/bin/ledger-sync" status --no-record 2>&1)
+case $out in *"in sync with upstream"*"up to date"*) ok "src: a caught-up clone reads in sync and up to date" ;; *) bad "src: in-sync clone misreported"; say "$out" ;; esac
+
+# ahead: an unpushed local commit is a local-only core
+echo "x" >> "$SRC_ROOT/pkgA/core/CHANGELOG.md"
+$GIT -C "$SRC_ROOT/pkgA" commit -qam local
+out=$(LEDGER_PKG="$SRC_ROOT/pkgA" sh "$HOST/.context_ledger/core/bin/ledger-sync" status 2>&1)
+case $out in *"AHEAD of upstream"*) ok "src: unpushed commits are reported AHEAD (local-only core)" ;; *) bad "src: ahead not reported"; say "$out" ;; esac
+[ "$(sed -n 's/^source_kind=//p' "$LOCK")" = local ] && ok "src: an ahead source records kind=local" || bad "src: ahead source not recorded as local"
+
+# offline: cannot verify, so must not claim up to date
+out=$(LEDGER_OFFLINE=1 LEDGER_PKG="$SRC_ROOT/pkgA" sh "$HOST/.context_ledger/core/bin/ledger-sync" status --no-record 2>&1)
+case $out in *"UNREACHABLE"*"unverified"*) ok "src: offline reads UNREACHABLE and unverified, never up to date" ;; *) bad "src: offline misreported"; say "$out" ;; esac
+rm -rf "$SRC_ROOT"
+
 rm -rf "$SH_SCRATCH" "${PS_SCRATCH:-}" 2>/dev/null || true
 
 say ""
