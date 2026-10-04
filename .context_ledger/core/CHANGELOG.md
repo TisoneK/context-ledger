@@ -10,6 +10,51 @@ bump MINOR; wording and fixes bump PATCH.
 
 ---
 
+## 2.2.0 — 2026-10-04
+
+**`ledger-guard` finishes the enforcement set from the host-repo audit:
+push-time checks and per-session identity.** 2.1.x shipped the turn-time
+reminder, the commit gate and sync-first; this adds the two mechanisms that
+needed a server-side or identity layer.
+
+- **Push-time checks** (`ledger-guard push-check [range]`, run by a new git
+  `pre-push` hook and, optionally, CI): a commit that touches both the
+  ledger and the product surface fails; so does removing or rewriting a
+  line of an append-only log (`sessions.md`, `flaws/log.md`, `decisions.md`,
+  `inefficiencies/log.md`) — unless the same line is re-added in the same
+  commit, which is how a move to an archive looks. Advisory notices (never
+  fail): product commits pushed with no session entry in the range (normal
+  mid-session) and commits with no `Ledger-Session` trailer.
+  `ledger-guard install --ci` writes `.github/workflows/ledger-guard.yml`
+  (core integrity + push-check on every push and PR) from
+  `templates/ci/ledger-guard.yml`; it is opt-in and never overwrites.
+- **Per-session identity.** A check-in commit (`... (S018) checks in ...`)
+  registers the codename with a heartbeat file under the git common dir
+  (untracked, shared by worktrees). A new `prepare-commit-msg` hook adds a
+  `Ledger-Session: S018` trailer to every commit and refreshes the heartbeat.
+  One live session is attributed automatically; with several live in one
+  checkout an unattributed commit is refused until you prefix
+  `LEDGER_SESSION=S<NNN>` (a malformed value is refused too).
+- **Heartbeat expiry.** A heartbeat older than `LEDGER_SESSION_TTL_HOURS`
+  (default 4) is stale. `ledger-guard sessions` and the per-turn reminder
+  list still-open roster rows whose session has gone quiet — report only; a
+  peer's row is never edited on a guess. `heartbeat S<NNN> [Name]` registers
+  by hand, `release S<NNN>` drops it at clock-out.
+- `install` now installs three git hooks (`pre-commit`, `prepare-commit-msg`,
+  `pre-push`); `status` reports all of them, the CI workflow and live sessions.
+
+Not done, and said so: a model string is still not an identity, and the
+trailer is only as honest as the committing agent (`LEDGER_SESSION` can be set
+to anyone's codename). Per-turn rule injection covers only agents with a prompt
+hook; the git hooks cover every agent. The PowerShell port runs `sessions`,
+`heartbeat`, `release`, `push-check` and `remind` through the sh edition (git
+ships its own sh, so it must exist on any machine that commits) and is UNRUN.
+
+Migration: re-run `ledger-guard install` once per clone to add the two new git
+hooks; add `--ci` to opt into the workflow.
+
+---
+
 ## 2.1.2 — 2026-10-04
 
 **Fix: `ledger-guard tool-check` blocked commands that only mention a gate.**

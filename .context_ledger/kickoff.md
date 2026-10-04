@@ -277,7 +277,8 @@ Not done until:
    more — the digest should reflect this session's outcome for whoever
    reads it next.
 6. You clock out: remove your row from `memory/office/agents/roster.md`
-   in the closing commit — but only when actually leaving. The session
+   in the closing commit (and run `ledger-guard release <codename>` to drop
+   your heartbeat) — but only when actually leaving. The session
    isn't over until the user says so; if more work arrives after
    clock-out, check back in first (same name and codename) and extend
    your existing `sessions.md` entry, never open a second one.

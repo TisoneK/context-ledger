@@ -23,7 +23,8 @@ function Say { param([string]$Message) Write-Output $Message }
 function Err { param([string]$Message) [Console]::Error.WriteLine("ledger-guard: $Message") }
 function Die { param([string]$Message) Err $Message; exit 2 }
 function Usage {
-  @('Commands:', '  install [--force]', '  status', '  remind', '  tool-check', '  git-pre-commit') | ForEach-Object { Say $_ }
+  @('Commands:', '  install [--force] [--ci]', '  status', '  remind', '  tool-check', '  git-pre-commit',
+    '  sessions | heartbeat S<NNN> [Name] | release S<NNN> | push-check [range]   (run through the sh edition)') | ForEach-Object { Say $_ }
   exit 2
 }
 
@@ -119,19 +120,37 @@ function Hook-Snippet {
 
 function Cmd-Install { param([string[]]$InstallArgs)
   $force = ($null -ne $InstallArgs -and $InstallArgs -contains '--force')
+  $ci = ($null -ne $InstallArgs -and $InstallArgs -contains '--ci')
   if (-not (Git-Dir)) { Die "not a git repository: $projectDir" }
-  $hd = Hooks-Dir; $hk = Join-Path $hd 'pre-commit'
+  $hd = Hooks-Dir
   New-Item -ItemType Directory -Path $hd -Force | Out-Null
-  $existing = ''
-  if (Test-Path -LiteralPath $hk -PathType Leaf) { $existing = [System.IO.File]::ReadAllText($hk) }
-  if ($existing -and $existing -notmatch 'ledger-guard' -and -not $force) {
-    Err "a pre-commit hook already exists and is not ledger-guard's: $hk"
-    Err '  re-run with --force to replace it, or add a call to ledger-guard git-pre-commit yourself.'
-  } else {
-    # git runs hooks with its own sh, so the hook body is the POSIX script; LF endings, no BOM.
-    $body = "#!/bin/sh`n# installed by ledger-guard -- refuses a commit with no fresh pre-commit gate pass`nexec sh `"`$(git rev-parse --show-toplevel)/$rel/ledger-guard`" git-pre-commit`n"
-    [System.IO.File]::WriteAllText($hk, $body, (New-Object System.Text.UTF8Encoding($false)))
-    Say "installed git pre-commit hook: $hk"
+  foreach ($h in @('pre-commit', 'prepare-commit-msg', 'pre-push')) {
+    $hk = Join-Path $hd $h
+    $existing = ''
+    if (Test-Path -LiteralPath $hk -PathType Leaf) { $existing = [System.IO.File]::ReadAllText($hk) }
+    if ($existing -and $existing -notmatch 'ledger-guard' -and -not $force) {
+      Err "a $h hook already exists and is not ledger-guard's: $hk"
+      Err "  re-run with --force to replace it, or add a call to ledger-guard git-$h yourself."
+    } else {
+      # git runs hooks with its own sh, so the hook body is the POSIX script; LF endings, no BOM.
+      $body = "#!/bin/sh`n# installed by ledger-guard ($h) -- see core/CHANGELOG.md`nexec sh `"`$(git rev-parse --show-toplevel)/$rel/ledger-guard`" git-$h `"`$@`"`n"
+      [System.IO.File]::WriteAllText($hk, $body, (New-Object System.Text.UTF8Encoding($false)))
+      Say "installed git $h hook: $hk"
+    }
+  }
+  if ($ci) {
+    $tpl = Join-Path $coreDir 'templates/ci/ledger-guard.yml'
+    $out = Join-Path $projectDir '.github/workflows/ledger-guard.yml'
+    if (-not (Test-Path -LiteralPath $tpl -PathType Leaf)) { Die "CI template missing: $tpl" }
+    if (Test-Path -LiteralPath $out -PathType Leaf) { Say '.github/workflows/ledger-guard.yml already exists -- left alone' }
+    else {
+      New-Item -ItemType Directory -Path (Split-Path -Parent $out) -Force | Out-Null
+      $dirName = $ledgerName; if (-not $dirName) { $dirName = '.context_ledger' }
+      $text = ([System.IO.File]::ReadAllText($tpl)).Replace('__LEDGER__', $dirName)
+      [System.IO.File]::WriteAllText($out, $text, (New-Object System.Text.UTF8Encoding($false)))
+      Say 'wrote .github/workflows/ledger-guard.yml (core integrity + push-check on every push and PR)'
+      Say 'NOTE: commit it on its own -- it is project tooling, not ledger memory'
+    }
   }
   $cs = Join-Path $projectDir '.claude/settings.json'
   if ((Test-Path -LiteralPath $cs -PathType Leaf) -and ([System.IO.File]::ReadAllText($cs) -match 'ledger-guard')) {
@@ -172,8 +191,17 @@ $restArgs = @(); if ($null -ne $Rest) { $restArgs += $Rest }
 switch ($Command) {
   'install' { Cmd-Install $restArgs }
   'status' { Cmd-Status }
-  'remind' { [void](Cmd-Remind) }
+  # remind prefers the sh edition when one is on PATH (Git for Windows ships it): the
+  # session-identity and stale-row lines live there only. Without sh, the plain reminder runs.
+  'remind' { if (Get-Command sh -ErrorAction SilentlyContinue) { & sh (Join-Path $PSScriptRoot 'ledger-guard') remind; exit $LASTEXITCODE } else { [void](Cmd-Remind) } }
   'tool-check' { exit (Cmd-ToolCheck) }
   'git-pre-commit' { exit (Cmd-GitPreCommit) }
+  # Session identity and push-time checks are implemented once, in the sh edition: git runs
+  # its hooks with its own sh, so the sh edition must exist and work on every machine anyway.
+  { $_ -in @('sessions', 'heartbeat', 'release', 'push-check', 'git-prepare-commit-msg', 'git-pre-push') } {
+    if (-not (Get-Command sh -ErrorAction SilentlyContinue)) { Die "'$Command' needs sh on PATH (Git for Windows provides it)" }
+    & sh (Join-Path $PSScriptRoot 'ledger-guard') $Command @restArgs
+    exit $LASTEXITCODE
+  }
   default { Die "unknown command '$Command' (try: ledger-guard.ps1 help)" }
 }
