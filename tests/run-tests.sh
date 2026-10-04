@@ -1047,6 +1047,10 @@ set_conf "$GD_SCRATCH" "pre-commit|sh -c 'exit 0'"
 $GDG install >/dev/null 2>&1
 [ -f "$GD_SCRATCH/.git/hooks/pre-commit" ] && ok "guard: install writes the git pre-commit hook" || bad "guard: no git hook installed"
 [ -f "$GD_SCRATCH/.claude/settings.json" ] && grep -q 'ledger-guard.*remind' "$GD_SCRATCH/.claude/settings.json" && ok "guard: install writes the Claude Code hooks" || bad "guard: no .claude/settings.json hooks"
+if command -v python3 >/dev/null 2>&1; then
+  python3 -c 'import json,sys; d=json.load(open(sys.argv[1])); assert d["hooks"]["PreToolUse"][0]["hooks"][0]["command"].endswith("ledger-guard tool-check")' "$GD_SCRATCH/.claude/settings.json" 2>/dev/null \
+    && ok "guard: the generated .claude/settings.json is valid JSON with the hook commands" || bad "guard: generated settings.json is not valid JSON"
+fi
 out=$($GDG remind 2>&1)
 case $out in *"Zed (S001) Working"*"guard-probe"*) ok "guard: remind shows the live row and current task" ;; *) bad "guard: remind output wrong"; say "$out" ;; esac
 case $out in *"Old (S002)"*) bad "guard: remind lists a Done row" ;; *) ok "guard: remind omits Done rows" ;; esac

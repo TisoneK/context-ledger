@@ -10,6 +10,20 @@ bump MINOR; wording and fixes bump PATCH.
 
 ---
 
+## 2.1.1 — 2026-10-04
+
+**Fix: `ledger-guard install` wrote an invalid `.claude/settings.json`.** The
+hook command embeds `"$CLAUDE_PROJECT_DIR"` inside a JSON string and its quotes
+were not backslash-escaped, so Claude Code could not load the file and none of
+the three hooks ran (found the first time the repo dogfooded 2.1.0). The sh and
+PowerShell ports now escape them, and a test parses the generated file as JSON.
+
+Migration: a project that ran `ledger-guard install` on 2.1.0 must delete the
+generated `.claude/settings.json` (or fix its quotes) and re-run
+`ledger-guard install`; the install never overwrites an existing file.
+
+---
+
 ## 2.1.0 — 2026-10-04
 
 **`ledger-guard`: the rules that were enforced only by an agent's goodwill
