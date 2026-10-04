@@ -5,10 +5,10 @@ at check-in and at exit. This is a DERIVED VIEW for fast orientation;
 open the file a line points at when your task needs more than the
 line gives you. Full reading order: ledger-schema.md. -->
 
-_Regenerated: 2026-10-03T19:16:00Z_
+_Regenerated: 2026-10-04T14:25:26Z_
 
 ## Standing params
-- **Core:** 2.0.5 (locked, verified 2026-10-03)
+- **Core:** 2.0.5 (locked, verified 2026-10-04)
 - **Target:** general sweep unless the user's chat message names a task
 - **Scope:** discovery + review + fix all safe issues
 - **Push policy:** push to main directly after each commit
@@ -19,6 +19,7 @@ _Regenerated: 2026-10-03T19:16:00Z_
 - **Kwame** (S011) — Done — Re-check-in after clock-out: supervisor found a file I left untracked at close (office/se…
 - **Omar** (S015) — Done — Supervisor audit: "v2 broke many things from v1" — investigated core 2.0.0's token-opti…
 - **Ilya** (S016) — Done — Fix the 2.0.3 ps1 ports that made Windows sessions fail their exit gate
+- **Priya** (S018) — Working — Host-repo evidence: agent self-audit says the protocol is enforced only by agent goodwill…
 
 ## Current task
 - **—** — none — no session in progress — *idle*
