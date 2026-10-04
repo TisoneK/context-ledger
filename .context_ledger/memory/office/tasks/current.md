@@ -12,6 +12,6 @@ entry and backlog before starting.
 - **Status:** in-progress | done | blocked (<blocker>)
 -->
 
-- **Session:** —
-- **Task:** none — no session in progress
-- **Status:** idle
+- **Session:** 2026-10-04 — Priya (S018) / claude-sonnet-5-5
+- **Task:** core 2.2.0 — remaining enforcement: pre-push/CI `push-check` (mixed surfaces, append-only edits), per-session identity (`Ledger-Session` trailer, heartbeats, stale-row report). Supervisor wanted all five items, not the subset.
+- **Status:** in-progress
