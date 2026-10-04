@@ -64,14 +64,14 @@ Full spec: `.context_ledger/core/schemas/ledger-schema.md` →
 
 | ID | Summary |
 |----|---------|
-| B-2026-10-04-1 | Run core 2.1.2's `ledger-guard.ps1` and the PowerShell halves of `ledger-gates.ps1` (Record-Pass / Clear-Pass / install nudge) on a Windows box (5.1 via `ledger-guard.cmd`, and pwsh 7): `install`, `status`, `remind`, `tool-check` with JSON on stdin (exit 2 on a piped gate), then confirm the git hook (always the sh edition) accepts a commit after the ps1 gate run, i.e. the ps1 marker tree equals the sh `write-tree`. Written with no engine on hand; fix whatever breaks, log it, add the ps1 test half. |
+| B-2026-10-04-1 | Run core 2.2.0's `ledger-guard.ps1` (install of all three hooks + `--ci`; `sessions`/`heartbeat`/`release`/`push-check`/`remind` delegating to sh via Join-Path backslash paths) and the PowerShell halves of `ledger-gates.ps1` (Record-Pass / Clear-Pass / install nudge) on a Windows box (5.1 via `ledger-guard.cmd`, and pwsh 7): `install`, `status`, `remind`, `tool-check` with JSON on stdin (exit 2 on a piped gate), then confirm the git hook (always the sh edition) accepts a commit after the ps1 gate run, i.e. the ps1 marker tree equals the sh `write-tree`. Written with no engine on hand; fix whatever breaks, log it, add the ps1 test half. |
 | B-2026-10-03-1 | Run core 2.0.5's PowerShell port on a Windows box (5.1 via the `.cmd` launcher and pwsh 7): `ledger-sync status`, `status --no-record`, `update --from-upstream`, then `sh tests/run-tests.sh` there (the gated ps1 provenance test). The port was written with no engine on hand and has never run; fix whatever breaks and log it. |
 
 ### Medium Priority
 
 | ID | Summary |
 |----|---------|
-| B-2026-10-04-2 | Enforcement gaps left open by the S018 flaw (flaws/log.md, 2026-10-04) after core 2.1.x closed hook-reminder / commit-gate / sync-first: (a) git pre-push or CI check -- product commits without a session entry, commits touching both surfaces, edits to past append-only entries; (b) per-session identity -- token file with codename + heartbeat carried in commit trailers, stale roster rows expiring (kin to the S012 stale-row flaw and parked P-2026-09-18-1 atomic ledger-checkin); (c) one injected rules digest instead of rules scattered across root/kickoff/edition/overrides/preferences. Ask the supervisor which to take next. |
+| B-2026-10-04-2 | Remaining enforcement gap from the S018 flaw (flaws/log.md, 2026-10-04): rules still scatter across root files, kickoff, edition, overrides and preferences -- an agent that reads only its entry file misses some. Idea: one generated, injected rules digest (extend `guard-reminder.md` / `ledger-state`) so the per-turn reminder carries the project overrides too. (Push-time/CI checks and per-session identity shipped in core 2.2.0; first CI run on the real GitHub runner is unobserved -- check the Actions tab once.) |
 
 ### Low Priority
 
