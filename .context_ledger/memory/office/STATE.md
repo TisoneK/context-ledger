@@ -5,10 +5,10 @@ at check-in and at exit. This is a DERIVED VIEW for fast orientation;
 open the file a line points at when your task needs more than the
 line gives you. Full reading order: ledger-schema.md. -->
 
-_Regenerated: 2026-10-04T14:25:26Z_
+_Regenerated: 2026-10-04T14:34:12Z_
 
 ## Standing params
-- **Core:** 2.0.5 (locked, verified 2026-10-04)
+- **Core:** 2.1.2 (locked, verified 2026-10-04)
 - **Target:** general sweep unless the user's chat message names a task
 - **Scope:** discovery + review + fix all safe issues
 - **Push policy:** push to main directly after each commit
@@ -19,18 +19,18 @@ _Regenerated: 2026-10-04T14:25:26Z_
 - **Kwame** (S011) — Done — Re-check-in after clock-out: supervisor found a file I left untracked at close (office/se…
 - **Omar** (S015) — Done — Supervisor audit: "v2 broke many things from v1" — investigated core 2.0.0's token-opti…
 - **Ilya** (S016) — Done — Fix the 2.0.3 ps1 ports that made Windows sessions fail their exit gate
-- **Priya** (S018) — Working — Host-repo evidence: agent self-audit says the protocol is enforced only by agent goodwill…
 
 ## Current task
 - **—** — none — no session in progress — *idle*
 
 ## Backlog — High priority (the top of the queue)
+| B-2026-10-04-1 | Run core 2.1.2's `ledger-guard.ps1` and the PowerShell halves of `ledger-gates.ps1` (Record-Pass / Clear-Pass / install nudge) on a Windows box (5.1 via `ledger-guard.cmd`, and pwsh 7): `install`, `status`, `remind`, `tool-check` with JSON on stdin (exit 2 on a piped gate), then confirm the git hook (always the sh edition) accepts a commit after the ps1 gate run, i.e. the ps1 marker tree equals the sh `write-tree`. Written with no engine on hand; fix whatever breaks, log it, add the ps1 test half. |
 | B-2026-10-03-1 | Run core 2.0.5's PowerShell port on a Windows box (5.1 via the `.cmd` launcher and pwsh 7): `ledger-sync status`, `status --no-record`, `update --from-upstream`, then `sh tests/run-tests.sh` there (the gated ps1 provenance test). The port was written with no engine on hand and has never run; fix whatever breaks and log it. |
 
-_0 medium, 1 low priority row(s) — see tasks/backlog.md_
+_1 medium, 1 low priority row(s) — see tasks/backlog.md_
 
 ## Logs at a glance — open only if your task touches these
-- flaws/log.md (protocol/.context_ledger friction): 8 entries, last added 2026-10-03
+- flaws/log.md (protocol/.context_ledger friction): 9 entries, last added 2026-10-04
 - inefficiencies/log.md (project code/env friction): 5 entries, last added 2026-09-14
 - plans/decisions.md (ADRs in force — respected, not relitigated): 8 entries, last added 2026-09-23
 

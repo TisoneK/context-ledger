@@ -174,3 +174,13 @@ re-seeded into the new office explicitly, and nothing else carries over.
 - **Notes:** summary only
 - **Collab:** none -- solo; office held only `Done` rows. Check-in collided with Ilya on S016 (stale clone), renumbered to S017. The auto-mode classifier blocked one chained rebase/amend/push; stopped, asked, and finished on the supervisor's go-ahead.
 - **Addendum (same session, supervisor correction):** the release above was numbered 2.1.0 and is a fix, so it was renumbered **2.0.5** (`fix(ledger): renumber ... 2.1.0 -> 2.0.5`, self-host redone upward after reverting the 2.1.0 self-host). Wherever this entry or the flaws entry says 2.1.0, read 2.0.5; no history was rewritten and nothing was force-pushed. Version choice should have been checked with the supervisor, and PATCH is the default for a defect fix.
+
+## 2026-10-04 — Session 18
+
+- **Agent:** Priya | **Model:** claude-sonnet-5-5 | **Platform:** macOS 24.6.0 (Claude Code desktop app, local) | **Role:** engineer | **Core:** 2.0.5 at arrival -> 2.1.2
+- **Task:** supervisor supplied a host-repo agent's self-audit (protocol enforced only by goodwill: no hooks, CI or identity); logged it, then built the first three mechanisms -- prompt-time reminder hook, commit/anti-mask guard, sync-before-check-in.
+- **Commits:** releases 2.1.0 (5d6d0e0), 2.1.1, 2.1.2, three self-hosts, two `.claude/settings.json` commits, plus ledger bookkeeping.
+- **Outcome:** done on the sh edition -- new `ledger-guard` (install/status/remind/tool-check/git-pre-commit); gate-pass marker in `ledger-gates` (git dir, keyed on `git write-tree`, revoked by a red run); entrance rule now syncs first. Suite 59 -> 76, green; this repo runs the guard on itself. Two post-release defects found by dogfooding (invalid generated JSON -> 2.1.1; prose false positive in tool-check -> 2.1.2). **The ps1 port is written but UNRUN.**
+- **Open items:** B-2026-10-04-1 (Windows pass, High); B-2026-10-04-2 (push/CI checks, identity + heartbeat, rules digest). Unrelated: an uncommitted `fleet.md` line (ClickTrader) belongs to the supervisor.
+- **Notes:** summary only
+- **Collab:** none -- solo.
