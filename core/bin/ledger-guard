@@ -1,0 +1,171 @@
+#!/bin/sh
+# ledger-guard — mechanical backing for protocol rules agents otherwise follow
+# on goodwill alone.
+#
+# Commands (run inside a bootstrapped project):
+#   install [--force]   install the git pre-commit hook and the Claude Code hooks
+#   status              show what is installed and the gate-pass state of the index
+#   remind              print the protocol floor + live roster + current task
+#                       (hook: SessionStart / UserPromptSubmit stdout reaches the agent)
+#   tool-check          PreToolUse hook: reads the tool call JSON on stdin; blocks
+#                       a masked gate verdict and `--no-verify` (exit 2)
+#   git-pre-commit      the git hook: refuses a commit whose staged tree has no
+#                       fresh `ledger-gates run pre-commit` pass
+#
+# Escape hatch: LEDGER_GUARD_SKIP=1 lets one commit through, loudly, and logs it
+# to <git-dir>/ledger-guard.log.
+
+set -u
+
+say() { printf '%s\n' "$*"; }
+err() { printf 'ledger-guard: %s\n' "$*" >&2; }
+die() { err "$*"; exit 2; }
+
+SCRIPT_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd) || exit 2
+CORE_DIR=$(CDPATH= cd -- "$SCRIPT_DIR/.." && pwd) || exit 2
+LEDGER_DIR=$(dirname -- "$CORE_DIR")
+LEDGER_NAME=$(basename -- "$LEDGER_DIR")
+case "$LEDGER_NAME" in
+  .context_ledger|.context) PROJECT_DIR=$(dirname -- "$LEDGER_DIR") ;;
+  *) PROJECT_DIR=$LEDGER_DIR; LEDGER_NAME="" ;;
+esac
+MEMORY_DIR=$LEDGER_DIR/memory
+
+usage() { sed -n '5,17p' "$0" | sed 's/^# \{0,1\}//'; exit 2; }
+
+git_p() { git -C "$PROJECT_DIR" "$@"; }
+git_dir() { git_p rev-parse --absolute-git-dir 2>/dev/null; }
+hooks_dir() { git_p rev-parse --git-path hooks 2>/dev/null | sed "s|^[^/]|$PROJECT_DIR/&|"; }
+
+# The index fingerprint: the tree git would commit. Exact, byte-safe, and
+# computable the same way by the PowerShell port.
+index_tree() { git_p write-tree 2>/dev/null; }
+marker_file() { _gd=$(git_dir) || return 1; printf '%s/ledger-gate-pass\n' "$_gd"; }
+
+marker_state() { # prints: fresh | stale | none
+  _mf=$(marker_file) || { say none; return; }
+  [ -f "$_mf" ] || { say none; return; }
+  _mt=$(sed -n 's/^tree=//p' "$_mf" | head -n1 | tr -d '\r')
+  _it=$(index_tree)
+  if [ -n "$_it" ] && [ "$_mt" = "$_it" ]; then say fresh; else say stale; fi
+}
+
+in_progress_op() {
+  _gd=$(git_dir) || return 1
+  [ -d "$_gd/rebase-merge" ] || [ -d "$_gd/rebase-apply" ] || [ -f "$_gd/MERGE_HEAD" ] || [ -f "$_gd/CHERRY_PICK_HEAD" ] || [ -f "$_gd/REVERT_HEAD" ]
+}
+
+cmd_git_pre_commit() {
+  if [ "${LEDGER_GUARD_SKIP:-}" = 1 ]; then
+    err "WARNING: LEDGER_GUARD_SKIP=1 -- committing WITHOUT a fresh pre-commit gate pass"
+    _gd=$(git_dir) && printf '%s skipped-guard tree=%s\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$(index_tree)" >> "$_gd/ledger-guard.log"
+    return 0
+  fi
+  if in_progress_op; then
+    err "notice: merge/rebase/cherry-pick in progress -- gate-pass check skipped"
+    return 0
+  fi
+  [ -f "$CORE_DIR/bin/ledger-gates" ] || return 0
+  case "$(marker_state)" in
+    fresh) return 0 ;;
+    none) _why="no pre-commit gate has passed in this checkout" ;;
+    *) _why="the staged tree changed since the last pre-commit gate pass" ;;
+  esac
+  err "BLOCKED: $_why."
+  err "  Stage exactly what you will commit, then run:"
+  err "    sh ${LEDGER_NAME:+$LEDGER_NAME/}core/bin/ledger-gates run pre-commit"
+  err "  and read its verdict line (never through a pipe). Then commit again."
+  return 1
+}
+
+cmd_tool_check() {
+  _in=$(cat)
+  case "$_in" in *ledger-gates*|*--no-verify*) ;; *) return 0 ;; esac
+  if printf '%s' "$_in" | grep -Eq 'git[[:space:]][^|;&"]*(commit|push)[^|;&"]*--no-verify'; then
+    err "BLOCKED -- --no-verify skips the pre-commit gate hook. Run the gate and commit normally."
+    return 2
+  fi
+  if printf '%s' "$_in" | grep -Eq 'ledger-gates[^|;&]*[^|;&]\|([^|]|$)'; then
+    err "BLOCKED -- a ledger-gates verdict is being piped (tail/head/grep...). The consumer's exit status can mask a red gate and the output you need is cut. Run the gate bare, or redirect to a file and read the verdict line."
+    return 2
+  fi
+  return 0
+}
+
+cmd_remind() {
+  _f=$CORE_DIR/templates/guard-reminder.md
+  say "[ledger-guard] protocol reminder"
+  [ -f "$_f" ] && cat "$_f"
+  _r=$MEMORY_DIR/office/agents/roster.md
+  if [ -f "$_r" ]; then
+    say "Board (rows not Done):"
+    grep -E '^\| *[^|-][^|]*\| *S[0-9]+ ' "$_r" | awk -F'|' '{ gsub(/^ +| +$/, "", $2); gsub(/^ +| +$/, "", $3); gsub(/^ +| +$/, "", $6); gsub(/^ +| +$/, "", $7); if ($6 != "Done") print "  - " $2 " (" $3 ") " $6 ": " substr($7, 1, 100) }'
+  fi
+  _c=$MEMORY_DIR/office/tasks/current.md
+  if [ -f "$_c" ]; then
+    _t=$(sed -n 's/^- \*\*Task:\*\* *//p' "$_c" | tail -n1)
+    _s=$(sed -n 's/^- \*\*Status:\*\* *//p' "$_c" | tail -n1)
+    say "Current task: ${_t:-?} [${_s:-?}]"
+  fi
+  say "Pre-commit gate vs. staged tree: $(marker_state)"
+  return 0
+}
+
+hook_snippet() {
+  _p="\"\$CLAUDE_PROJECT_DIR\"/${LEDGER_NAME:+$LEDGER_NAME/}core/bin/ledger-guard"
+  cat <<EOF
+{
+  "hooks": {
+    "SessionStart": [{ "hooks": [{ "type": "command", "command": "sh $_p remind" }] }],
+    "UserPromptSubmit": [{ "hooks": [{ "type": "command", "command": "sh $_p remind" }] }],
+    "PreToolUse": [{ "matcher": "Bash", "hooks": [{ "type": "command", "command": "sh $_p tool-check" }] }]
+  }
+}
+EOF
+}
+
+cmd_install() {
+  _force=0; [ "${1:-}" = "--force" ] && _force=1
+  git_p rev-parse --git-dir >/dev/null 2>&1 || die "not a git repository: $PROJECT_DIR"
+  _hd=$(hooks_dir); _hk=$_hd/pre-commit
+  mkdir -p "$_hd" || die "cannot create $_hd"
+  if [ -f "$_hk" ] && ! grep -q 'ledger-guard' "$_hk" && [ "$_force" -eq 0 ]; then
+    err "a pre-commit hook already exists and is not ledger-guard's: $_hk"
+    err "  re-run with --force to replace it, or add this line to it yourself:"
+    err "  sh \"\$(git rev-parse --show-toplevel)/${LEDGER_NAME:+$LEDGER_NAME/}core/bin/ledger-guard\" git-pre-commit || exit 1"
+  else
+    printf '#!/bin/sh\n# installed by ledger-guard -- refuses a commit with no fresh pre-commit gate pass\nexec sh "$(git rev-parse --show-toplevel)/%score/bin/ledger-guard" git-pre-commit\n' "${LEDGER_NAME:+$LEDGER_NAME/}" > "$_hk"
+    chmod +x "$_hk"
+    say "installed git pre-commit hook: $_hk"
+  fi
+  _cs=$PROJECT_DIR/.claude/settings.json
+  if [ -f "$_cs" ] && grep -q 'ledger-guard' "$_cs"; then
+    say "Claude Code hooks already present in .claude/settings.json"
+  elif [ -f "$_cs" ]; then
+    say "NOTICE: .claude/settings.json exists -- merge this \"hooks\" block into it yourself:"
+    hook_snippet
+  else
+    mkdir -p "$PROJECT_DIR/.claude" && hook_snippet > "$_cs"
+    say "wrote .claude/settings.json (Claude Code hooks: SessionStart + UserPromptSubmit remind, PreToolUse tool-check)"
+    say "NOTE: commit it on its own -- it is project tooling, not ledger memory"
+  fi
+  say "other agents: wire 'sh ${LEDGER_NAME:+$LEDGER_NAME/}core/bin/ledger-guard remind' into their prompt hook; the git hook covers every agent"
+}
+
+cmd_status() {
+  _hk=$(hooks_dir)/pre-commit
+  if [ -f "$_hk" ] && grep -q 'ledger-guard' "$_hk"; then say "git pre-commit hook: installed"; else say "git pre-commit hook: MISSING (run: ledger-guard install)"; fi
+  if [ -f "$PROJECT_DIR/.claude/settings.json" ] && grep -q 'ledger-guard' "$PROJECT_DIR/.claude/settings.json"; then say "Claude Code hooks: installed"; else say "Claude Code hooks: not installed (run: ledger-guard install)"; fi
+  say "pre-commit gate vs. staged tree: $(marker_state)"
+}
+
+CMD=${1:-}; [ $# -gt 0 ] && shift
+case "$CMD" in
+  install) cmd_install "$@" ;;
+  status) cmd_status ;;
+  remind) cmd_remind ;;
+  tool-check) cmd_tool_check ;;
+  git-pre-commit) cmd_git_pre_commit ;;
+  ''|-h|--help|help) usage ;;
+  *) die "unknown command '$CMD' (try: ledger-guard help)" ;;
+esac

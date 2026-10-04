@@ -257,6 +257,14 @@ command and observed result before retrying.
   **strip every hit on sight** — a leaked reference is a safe fix: drop it (state
   the reason in plain words if one was pointed at), commit the strip as a normal
   product fix, and continue the session; never leave a known leak or defer it.
+- **The guard backs the pre-commit rule mechanically.** A passing
+  `run pre-commit` records the staged tree it passed for (inside `.git/`,
+  untracked); `sh .context_ledger/core/bin/ledger-guard install` wires a git
+  pre-commit hook that refuses any commit whose staged tree has no fresh pass
+  (a red gate revokes it; staging more after the pass invalidates it), plus
+  Claude Code hooks that re-inject the protocol floor every turn and block
+  piping a gate (`| tail` masks a red verdict) and `--no-verify`. One commit
+  may pass with `LEDGER_GUARD_SKIP=1` — loud, logged, and a flaw to record.
 - **Before branch integration:** run
   `sh .context_ledger/core/bin/ledger-gates run integration --session <id> --issue <id>`.
   This includes `ledger-collab check` and configured build/integration

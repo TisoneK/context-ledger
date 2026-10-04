@@ -1028,6 +1028,59 @@ out=$(LEDGER_OFFLINE=1 LEDGER_PKG="$SRC_ROOT/pkgA" sh "$HOST/.context_ledger/cor
 case $out in *"UNREACHABLE"*"unverified"*) ok "src: offline reads UNREACHABLE and unverified, never up to date" ;; *) bad "src: offline misreported"; say "$out" ;; esac
 rm -rf "$SRC_ROOT"
 
+# ---- ledger-guard (core 2.1.0): mechanical backing for gate/commit rules -----
+GD_SCRATCH=${TMPDIR:-/tmp}/ledger-test-guard
+make_scratch "$GD_SCRATCH"
+mkdir -p "$GD_SCRATCH/.context_ledger/core/templates" "$GD_SCRATCH/.context_ledger/memory/office/agents" "$GD_SCRATCH/.context_ledger/memory/office/tasks"
+cp "$CORE/templates/guard-reminder.md" "$GD_SCRATCH/.context_ledger/core/templates/"
+cat > "$GD_SCRATCH/.context_ledger/memory/office/agents/roster.md" <<'R'
+| Name | Codename | Model | Doing | Status | Status detail |
+|------|----------|-------|-------|--------|---------------|
+| Zed | S001 | m | thing | Working | mid-way |
+| Old | S002 | m | thing | Done | shipped |
+R
+printf -- '- **Task:** guard-probe\n- **Status:** in-progress\n' > "$GD_SCRATCH/.context_ledger/memory/office/tasks/current.md"
+GDG="sh $GD_SCRATCH/.context_ledger/core/bin/ledger-guard"
+GDGATE="sh $GD_SCRATCH/.context_ledger/core/bin/ledger-gates run pre-commit"
+gcommit() { git -C "$GD_SCRATCH" -c user.name=t -c user.email=t@t commit -q "$@"; }
+set_conf "$GD_SCRATCH" "pre-commit|sh -c 'exit 0'"
+$GDG install >/dev/null 2>&1
+[ -f "$GD_SCRATCH/.git/hooks/pre-commit" ] && ok "guard: install writes the git pre-commit hook" || bad "guard: no git hook installed"
+[ -f "$GD_SCRATCH/.claude/settings.json" ] && grep -q 'ledger-guard.*remind' "$GD_SCRATCH/.claude/settings.json" && ok "guard: install writes the Claude Code hooks" || bad "guard: no .claude/settings.json hooks"
+out=$($GDG remind 2>&1)
+case $out in *"Zed (S001) Working"*"guard-probe"*) ok "guard: remind shows the live row and current task" ;; *) bad "guard: remind output wrong"; say "$out" ;; esac
+case $out in *"Old (S002)"*) bad "guard: remind lists a Done row" ;; *) ok "guard: remind omits Done rows" ;; esac
+echo one > "$GD_SCRATCH/f1"; git -C "$GD_SCRATCH" add f1
+gcommit -m one >/dev/null 2>&1; rc=$?
+[ "$rc" -ne 0 ] && ok "guard: commit with no gate pass is blocked" || bad "guard: ungated commit went through"
+$GDGATE >/dev/null 2>&1
+gcommit -m one >/dev/null 2>&1; rc=$?
+[ "$rc" -eq 0 ] && ok "guard: commit after a fresh pre-commit pass is allowed" || bad "guard: gated commit blocked"
+echo two > "$GD_SCRATCH/f2"; git -C "$GD_SCRATCH" add f2
+$GDGATE >/dev/null 2>&1
+echo three > "$GD_SCRATCH/f3"; git -C "$GD_SCRATCH" add f3
+gcommit -m two >/dev/null 2>&1; rc=$?
+[ "$rc" -ne 0 ] && ok "guard: staging after the gate pass invalidates it" || bad "guard: stale pass accepted"
+git -C "$GD_SCRATCH" rm -q --cached f3
+$GDGATE >/dev/null 2>&1
+set_conf "$GD_SCRATCH" "pre-commit|sh -c 'exit 3'"
+$GDGATE >/dev/null 2>&1
+gcommit -m two >/dev/null 2>&1; rc=$?
+[ "$rc" -ne 0 ] && ok "guard: a red gate revokes an earlier pass on the same tree" || bad "guard: red gate marked as a pass"
+LEDGER_GUARD_SKIP=1 gcommit -m two >/dev/null 2>&1; rc=$?
+[ "$rc" -eq 0 ] && [ -s "$GD_SCRATCH/.git/ledger-guard.log" ] && ok "guard: LEDGER_GUARD_SKIP=1 passes loudly and is logged" || bad "guard: skip hatch broken (rc=$rc)"
+tc() { printf '{"tool_input":{"command":"%s"}}' "$1" | $GDG tool-check >/dev/null 2>&1; }
+tc 'sh x/ledger-gates run exit | tail -3'; [ $? -eq 2 ] && ok "guard: tool-check blocks a piped gate verdict" || bad "guard: piped gate allowed"
+tc 'git commit --no-verify -m x'; [ $? -eq 2 ] && ok "guard: tool-check blocks --no-verify" || bad "guard: --no-verify allowed"
+tc 'sh x/ledger-gates run exit || true'; r1=$?; tc 'sh x/ledger-gates run exit > o.txt; cat o.txt | tail'; r2=$?; tc 'ls | tail'; r3=$?
+[ "$r1$r2$r3" = 000 ] && ok "guard: tool-check leaves '||', redirected gates and unrelated pipes alone" || bad "guard: tool-check false positive ($r1$r2$r3)"
+out=$(sh "$GD_SCRATCH/.context_ledger/core/bin/ledger-gates" checkpoint 2>&1)
+case $out in *"guard hooks are not installed"*|*"ledger-guard hooks are not installed"*) bad "guard: checkpoint nags although installed" ;; *) ok "guard: checkpoint is quiet once hooks are installed" ;; esac
+rm -f "$GD_SCRATCH/.git/hooks/pre-commit"
+out=$(sh "$GD_SCRATCH/.context_ledger/core/bin/ledger-gates" checkpoint 2>&1)
+case $out in *"ledger-guard hooks are not installed"*) ok "guard: checkpoint nudges when the git hook is missing" ;; *) bad "guard: no install nudge" ;; esac
+rm -rf "$GD_SCRATCH"
+
 rm -rf "$SH_SCRATCH" "${PS_SCRATCH:-}" 2>/dev/null || true
 
 say ""

@@ -106,7 +106,7 @@ opens — memory that bounds itself instead of growing to unreadable.
 │   ├── rules/      # two editions: local IDE agents · cloud/sandbox agents
 │   ├── schemas/    # the single source of truth on every memory file format
 │   ├── roles/      # mission overlays (reviewer, security-auditor, docs-agent…)
-│   └── bin/        # ledger-sync · ledger-collab · ledger-gates ·
+│   └── bin/        # ledger-sync · ledger-collab · ledger-gates · ledger-guard ·
 │                   #   ledger-mem · ledger-history (sh + PowerShell ports)
 └── memory/         # the project's living memory — project-owned, writable,
                     #   never touched by protocol updates
