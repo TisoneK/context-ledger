@@ -10,6 +10,47 @@ bump MINOR; wording and fixes bump PATCH.
 
 ---
 
+## 2.1.0 — 2026-10-04
+
+**`ledger-guard`: the rules that were enforced only by an agent's goodwill
+now have a mechanism behind them.** A host-repo agent audited its own
+session and found every protocol rule was prose it chose to follow: no git
+hooks, no CI, nothing re-injecting the rules after a context compaction,
+gate results read through `| tail`, a commit made behind a red gate. Three
+of the gaps are closed here; the rest (push-time CI, per-session identity)
+stay open in `flaws/log.md`.
+
+- **Gate-pass marker.** `ledger-gates run pre-commit` records, inside the
+  git dir (never tracked), the index tree it passed for (`git write-tree`).
+  A red run revokes it. The same marker is written by the PowerShell port.
+- **Git pre-commit hook** (`ledger-guard install`): refuses a commit whose
+  staged tree has no fresh pass — so staging more after the gate, or never
+  running it, blocks the commit. Works for every agent, not just Claude.
+  Skipped (noticed) during a merge/rebase/cherry-pick; one commit may pass
+  with `LEDGER_GUARD_SKIP=1`, which is loud and logged to
+  `<git-dir>/ledger-guard.log`.
+- **Claude Code hooks** (same install, written to `.claude/settings.json`
+  when absent, otherwise printed to merge): `SessionStart` and
+  `UserPromptSubmit` run `ledger-guard remind` — a short protocol floor
+  (`templates/guard-reminder.md`) plus the live roster rows and the current
+  task, every turn, which survives compaction; `PreToolUse` on Bash runs
+  `ledger-guard tool-check`, blocking a piped `ledger-gates` verdict
+  (`| tail` masking red) and `--no-verify`.
+- **`ledger-gates checkpoint`** nudges when the git hook is not installed.
+- **Sync before check-in.** The entrance rule in `AGENTS.md`, `CLAUDE.md` and
+  kickoff Phase 2 now says the first step is `git pull --ff-only` on a
+  clean tree — a sync is not analysis — so the board you sign is the real
+  one (twice-logged flaw: stale clone, wrong codename, rebase conflict).
+  Phase 1 also runs `ledger-guard install` once per clone.
+
+Migration: run `ledger-guard install` once per clone after updating; refresh
+`AGENTS.md`/`CLAUDE.md` from the templates to pick up the sync wording. The
+PowerShell port of `ledger-guard` is written but UNRUN (no engine on the
+authoring machine) — the git hook itself always runs the sh edition, since
+git ships its own sh.
+
+---
+
 ## 2.0.5 — 2026-10-03
 
 *Numbering: this was first pushed as 2.1.0 and renumbered within the hour, before
