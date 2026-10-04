@@ -85,7 +85,10 @@ cmd_tool_check() {
     err "BLOCKED -- --no-verify skips the pre-commit gate hook. Run the gate and commit normally."
     return 2
   fi
-  if printf '%s' "$_in" | grep -Eq 'ledger-gates[^|;&]*[^|;&]\|([^|]|$)'; then
+  if printf '%s' "$_in" | grep -Eq 'ledger-gates(\.ps1|\.cmd)?[[:space:]]+(run|checkpoint)([^|;&\\`)]|>&[0-9])*\|([^|]|$)'; then
+    # (a backslash, backtick or ')' ends the match: in the tool-call JSON a
+    # newline is `\n`, so prose that merely names the tool cannot reach a
+    # pipe on a later line)
     err "BLOCKED -- a ledger-gates verdict is being piped (tail/head/grep...). The consumer's exit status can mask a red gate and the output you need is cut. Run the gate bare, or redirect to a file and read the verdict line."
     return 2
   fi
