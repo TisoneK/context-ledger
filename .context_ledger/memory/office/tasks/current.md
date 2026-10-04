@@ -12,6 +12,6 @@ entry and backlog before starting.
 - **Status:** in-progress | done | blocked (<blocker>)
 -->
 
-- **Session:** —
-- **Task:** none — no session in progress
-- **Status:** idle
+- **Session:** 2026-10-04 — Priya (S018) / claude-sonnet-5-5
+- **Task:** core 2.1.0 — mechanical enforcement: `ledger-guard` (turn-time reminder hook, commit/anti-mask guard, git pre-commit hook), gate-pass marker, sync-before-check-in step. From flaw 2026-10-04 (S018).
+- **Status:** in-progress
