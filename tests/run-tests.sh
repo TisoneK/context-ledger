@@ -1076,6 +1076,10 @@ LEDGER_GUARD_SKIP=1 gcommit -m two >/dev/null 2>&1; rc=$?
 tc() { printf '{"tool_input":{"command":"%s"}}' "$1" | $GDG tool-check >/dev/null 2>&1; }
 tc 'sh x/ledger-gates run exit | tail -3'; [ $? -eq 2 ] && ok "guard: tool-check blocks a piped gate verdict" || bad "guard: piped gate allowed"
 tc 'git commit --no-verify -m x'; [ $? -eq 2 ] && ok "guard: tool-check blocks --no-verify" || bad "guard: --no-verify allowed"
+tc 'sh x/ledger-gates run pre-commit 2>&1|tail -1'; [ $? -eq 2 ] && ok "guard: tool-check blocks a piped gate with no spaces around the pipe" || bad "guard: tight pipe allowed"
+# prose that merely names the tool, followed by a pipe on a LATER line (JSON newline = backslash-n)
+printf '%s' '{"tool_input":{"command":"cat <<E\nabout ledger-gates run exit here\nE\nls | tail"}}' | $GDG tool-check >/dev/null 2>&1
+[ $? -eq 0 ] && ok "guard: tool-check ignores gate names in prose that a later pipe merely follows" || bad "guard: prose false positive"
 tc 'sh x/ledger-gates run exit || true'; r1=$?; tc 'sh x/ledger-gates run exit > o.txt; cat o.txt | tail'; r2=$?; tc 'ls | tail'; r3=$?
 [ "$r1$r2$r3" = 000 ] && ok "guard: tool-check leaves '||', redirected gates and unrelated pipes alone" || bad "guard: tool-check false positive ($r1$r2$r3)"
 out=$(sh "$GD_SCRATCH/.context_ledger/core/bin/ledger-gates" checkpoint 2>&1)

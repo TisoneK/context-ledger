@@ -64,7 +64,9 @@ function Cmd-ToolCheck {
     Err 'BLOCKED -- --no-verify skips the pre-commit gate hook. Run the gate and commit normally.'
     return 2
   }
-  if ($in -match 'ledger-gates[^|;&]*[^|;&]\|([^|]|$)') {
+  # a backslash, backtick or ')' ends the match: in the tool-call JSON a newline is \n,
+  # so prose that merely names the tool cannot reach a pipe on a later line
+  if ($in -match 'ledger-gates(\.ps1|\.cmd)?\s+(run|checkpoint)([^|;&\\`)]|>&[0-9])*\|([^|]|$)') {
     Err 'BLOCKED -- a ledger-gates verdict is being piped (tail/head/grep...). The consumer can mask a red gate and cut the output you need. Run the gate bare, or redirect to a file and read the verdict line.'
     return 2
   }

@@ -10,6 +10,21 @@ bump MINOR; wording and fixes bump PATCH.
 
 ---
 
+## 2.1.2 — 2026-10-04
+
+**Fix: `ledger-guard tool-check` blocked commands that only mention a gate.**
+The piped-gate pattern matched the word `ledger-gates` anywhere in the tool call
+and then any `|` after it, so a heredoc that merely named the tool followed by a
+`| tail` several lines later was refused — it locked the session that shipped
+2.1.0 out of editing its own files. The pattern now needs a real invocation
+(`ledger-gates run|checkpoint`) and stops at a backslash, backtick or `)` (a JSON
+newline is `\n`), so prose cannot reach a pipe on a later line; `2>&1|tail`
+is still caught. Two tests added (tight pipe blocked, prose allowed).
+
+Migration: none; `ledger-sync update` picks it up.
+
+---
+
 ## 2.1.1 — 2026-10-04
 
 **Fix: `ledger-guard install` wrote an invalid `.claude/settings.json`.** The
