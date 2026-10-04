@@ -102,7 +102,8 @@ function Cmd-Remind {
 }
 
 function Hook-Snippet {
-  $p = '$CLAUDE_PROJECT_DIR/' + $rel + '/ledger-guard.cmd'
+  # the command string sits inside JSON, so its own quotes are backslash-escaped
+  $p = '\"$CLAUDE_PROJECT_DIR/' + $rel + '/ledger-guard.cmd\"'
   @(
     '{',
     '  "hooks": {',

@@ -112,7 +112,8 @@ cmd_remind() {
 }
 
 hook_snippet() {
-  _p="\"\$CLAUDE_PROJECT_DIR\"/${LEDGER_NAME:+$LEDGER_NAME/}core/bin/ledger-guard"
+  # the command string sits inside JSON, so its own quotes are backslash-escaped
+  _p="\\\"\$CLAUDE_PROJECT_DIR\\\"/${LEDGER_NAME:+$LEDGER_NAME/}core/bin/ledger-guard"
   cat <<EOF
 {
   "hooks": {
