@@ -265,6 +265,18 @@ command and observed result before retrying.
   Claude Code hooks that re-inject the protocol floor every turn and block
   piping a gate (`| tail` masks a red verdict) and `--no-verify`. One commit
   may pass with `LEDGER_GUARD_SKIP=1` — loud, logged, and a flaw to record.
+- **Identity and push-time checks.** Your check-in commit registers your
+  codename (a heartbeat file in `.git/`, never tracked); every later commit
+  gets a `Ledger-Session: S<NNN>` trailer and refreshes it. With one live
+  session that is automatic; with several in one checkout, prefix commits
+  with `LEDGER_SESSION=S<NNN>` (an unattributed commit is refused). A
+  heartbeat older than `LEDGER_SESSION_TTL_HOURS` (default 4) marks the
+  session stale: `ledger-guard sessions` and the per-turn reminder flag its
+  still-open roster row — ask the supervisor, then clock it out; never edit a
+  peer's row on a guess. `ledger-guard push-check` (the git pre-push hook,
+  and CI via `ledger-guard install --ci`) fails a push containing a commit
+  that touches both surfaces or removes/rewrites a line of an append-only log
+  that was not merely moved to an archive.
 - **Before branch integration:** run
   `sh .context_ledger/core/bin/ledger-gates run integration --session <id> --issue <id>`.
   This includes `ledger-collab check` and configured build/integration

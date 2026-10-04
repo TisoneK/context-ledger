@@ -5,4 +5,5 @@ Protocol floor (re-injected by ledger-guard every turn - it survives context com
 - Two surfaces: commit project files and `.context_ledger/` memory separately; never `git add -A` across both. Never write under `.context_ledger/core/`.
 - Append-only logs (sessions.md, flaws/log.md, decisions.md): re-read the file tail first, append, never edit a past entry.
 - Corrections, flaws and decisions are recorded when they happen, not when asked. Keep `office/tasks/current.md` true.
+- Identity: your check-in commit registers your codename; every commit gets a `Ledger-Session:` trailer. If several agents are live in this checkout, prefix commits with `LEDGER_SESSION=S<NNN>`. Push-check (pre-push + CI) rejects mixed-surface commits and edited append-only logs.
 - No secret values in tracked files. Commit AND push; a user reminder to push is a logged failure.

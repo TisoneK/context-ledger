@@ -1071,7 +1071,7 @@ set_conf "$GD_SCRATCH" "pre-commit|sh -c 'exit 3'"
 $GDGATE >/dev/null 2>&1
 gcommit -m two >/dev/null 2>&1; rc=$?
 [ "$rc" -ne 0 ] && ok "guard: a red gate revokes an earlier pass on the same tree" || bad "guard: red gate marked as a pass"
-LEDGER_GUARD_SKIP=1 gcommit -m two >/dev/null 2>&1; rc=$?
+(LEDGER_GUARD_SKIP=1; export LEDGER_GUARD_SKIP; gcommit -m two) >/dev/null 2>&1; rc=$?
 [ "$rc" -eq 0 ] && [ -s "$GD_SCRATCH/.git/ledger-guard.log" ] && ok "guard: LEDGER_GUARD_SKIP=1 passes loudly and is logged" || bad "guard: skip hatch broken (rc=$rc)"
 tc() { printf '{"tool_input":{"command":"%s"}}' "$1" | $GDG tool-check >/dev/null 2>&1; }
 tc 'sh x/ledger-gates run exit | tail -3'; [ $? -eq 2 ] && ok "guard: tool-check blocks a piped gate verdict" || bad "guard: piped gate allowed"
@@ -1088,6 +1088,69 @@ rm -f "$GD_SCRATCH/.git/hooks/pre-commit"
 out=$(sh "$GD_SCRATCH/.context_ledger/core/bin/ledger-gates" checkpoint 2>&1)
 case $out in *"ledger-guard hooks are not installed"*) ok "guard: checkpoint nudges when the git hook is missing" ;; *) bad "guard: no install nudge" ;; esac
 rm -rf "$GD_SCRATCH"
+
+# ---- ledger-guard identity + push-check (core 2.2.0) -------------------------
+GS=${TMPDIR:-/tmp}/ledger-test-guard2
+make_scratch "$GS"
+mkdir -p "$GS/.context_ledger/core/templates/ci" "$GS/.context_ledger/memory/office/agents" "$GS/.context_ledger/memory/office/flaws" "$GS/.context_ledger/memory/office/plans"
+cp "$CORE/templates/guard-reminder.md" "$GS/.context_ledger/core/templates/"
+cp "$CORE/templates/ci/ledger-guard.yml" "$GS/.context_ledger/core/templates/ci/"
+cat > "$GS/.context_ledger/memory/office/agents/roster.md" <<'R'
+| Name | Codename | Model | Doing | Status | Status detail |
+|------|----------|-------|-------|--------|---------------|
+| Zed | S001 | m | thing | Working | mid-way |
+| Yan | S002 | m | thing | Working | mid-way |
+R
+set_conf "$GS" "pre-commit|sh -c 'exit 0'"
+GSG="sh $GS/.context_ledger/core/bin/ledger-guard"
+gsc() { git -C "$GS" add -A; sh "$GS/.context_ledger/core/bin/ledger-gates" run pre-commit >/dev/null 2>&1; git -C "$GS" -c user.name=t -c user.email=t@t commit -q "$@"; }
+trailer_of() { git -C "$GS" log -1 --format=%B | sed -n 's/^Ledger-Session: //p'; }
+$GSG install --ci >/dev/null 2>&1
+[ -x "$GS/.git/hooks/prepare-commit-msg" ] && [ -x "$GS/.git/hooks/pre-push" ] && ok "guard2: install adds prepare-commit-msg and pre-push hooks" || bad "guard2: hooks missing"
+grep -q 'sh .context_ledger/core/bin/ledger-guard push-check' "$GS/.github/workflows/ledger-guard.yml" 2>/dev/null && ok "guard2: install --ci writes the workflow with the ledger path filled in" || bad "guard2: CI workflow missing or unfilled"
+gsc -qm "chore(ledger): Zed (S001) checks in -- probe" >/dev/null 2>&1
+[ "$(trailer_of)" = S001 ] && $GSG sessions | grep -q 'S001  Zed' && ok "guard2: a check-in commit registers the session and carries its trailer" || bad "guard2: check-in did not register (trailer='$(trailer_of)')"
+echo a > "$GS/a.txt"; gsc -qm "feat: a" >/dev/null 2>&1
+[ "$(trailer_of)" = S001 ] && ok "guard2: the sole live session is attributed automatically" || bad "guard2: no automatic attribution"
+gsc -qm "chore(ledger): Yan (S002) checks in -- probe" --allow-empty >/dev/null 2>&1
+[ "$(trailer_of)" = S002 ] && ok "guard2: a second check-in is attributed to itself, not the first session" || bad "guard2: second check-in mis-attributed ($(trailer_of))"
+echo b > "$GS/b.txt"; gsc -qm "feat: b" >/dev/null 2>&1; rc=$?
+[ "$rc" -ne 0 ] && ok "guard2: with two live sessions an unattributed commit is refused" || bad "guard2: ambiguous commit went through"
+(LEDGER_SESSION=S001; export LEDGER_SESSION; gsc -qm "feat: b") >/dev/null 2>&1; rc=$?
+[ "$rc" -eq 0 ] && [ "$(trailer_of)" = S001 ] && ok "guard2: LEDGER_SESSION names the author and disambiguates" || bad "guard2: LEDGER_SESSION not honoured (rc=$rc)"
+(LEDGER_SESSION=bogus; export LEDGER_SESSION; gsc -qm "feat: z" --allow-empty) >/dev/null 2>&1; rc=$?
+[ "$rc" -ne 0 ] && ok "guard2: a malformed LEDGER_SESSION is refused" || bad "guard2: bogus LEDGER_SESSION accepted"
+# stale heartbeat -> reported on the roster, and the session stops counting as live
+sed -i.bak 's/^at=.*/at=1000000000/' "$GS/.git/ledger-sessions/S002" && rm -f "$GS/.git/ledger-sessions/S002.bak"
+out=$($GSG remind 2>&1)
+case $out in *"STALE? Yan (S002)"*) ok "guard2: remind flags a roster row whose session went quiet" ;; *) bad "guard2: stale row not flagged"; say "$out" ;; esac
+case $out in *"You are: S001"*) ok "guard2: with the other session expired, remind identifies the author" ;; *) bad "guard2: remind identity wrong"; say "$out" ;; esac
+$GSG release S002 >/dev/null 2>&1; $GSG sessions | grep -q 'S002' && bad "guard2: release left the session registered" || ok "guard2: release drops the session"
+# push-check: surfaces and append-only logs
+BASE=$(git -C "$GS" rev-parse HEAD)
+echo c > "$GS/c.txt"; printf 'x\n' > "$GS/.context_ledger/memory/office/flaws/log.md"
+(LEDGER_SESSION=S001; export LEDGER_SESSION; gsc -qm "mixed") >/dev/null 2>&1
+out=$($GSG push-check "$BASE..HEAD" 2>&1); rc=$?
+[ "$rc" -ne 0 ] && case $out in *"both surfaces"*) ok "guard2: push-check rejects a commit touching both surfaces" ;; *) bad "guard2: wrong reason"; say "$out" ;; esac || bad "guard2: mixed commit accepted"
+BASE=$(git -C "$GS" rev-parse HEAD)
+printf 'x\nsecond entry\n' > "$GS/.context_ledger/memory/office/flaws/log.md"; (LEDGER_SESSION=S001; export LEDGER_SESSION; gsc -qm "chore(ledger): append") >/dev/null 2>&1
+$GSG push-check "$BASE..HEAD" >/dev/null 2>&1 && ok "guard2: push-check accepts a pure append to an append-only log" || bad "guard2: append rejected"
+BASE=$(git -C "$GS" rev-parse HEAD)
+printf 'x\nSECOND entry rewritten\n' > "$GS/.context_ledger/memory/office/flaws/log.md"; (LEDGER_SESSION=S001; export LEDGER_SESSION; gsc -qm "chore(ledger): rewrite") >/dev/null 2>&1
+out=$($GSG push-check "$BASE..HEAD" 2>&1); rc=$?
+[ "$rc" -ne 0 ] && case $out in *"append-only log edited"*) ok "guard2: push-check rejects a rewritten past entry" ;; *) bad "guard2: wrong reason"; say "$out" ;; esac || bad "guard2: rewrite accepted"
+BASE=$(git -C "$GS" rev-parse HEAD)
+printf 'x\n' > "$GS/.context_ledger/memory/office/flaws/log.md"; printf 'SECOND entry rewritten\n' > "$GS/.context_ledger/memory/office/flaws/archive.md"
+(LEDGER_SESSION=S001; export LEDGER_SESSION; gsc -qm "chore(ledger): archive move") >/dev/null 2>&1
+$GSG push-check "$BASE..HEAD" >/dev/null 2>&1 && ok "guard2: push-check accepts moving a line to the archive" || bad "guard2: archive move rejected"
+# the pre-push hook feeds push-check the refs being pushed
+git -C "$GS" init -q --bare "$GS.remote" 2>/dev/null; git -C "$GS" remote add origin "$GS.remote"
+printf 'x\nreplaced\n' > "$GS/.context_ledger/memory/office/flaws/log.md"; (LEDGER_SESSION=S001; export LEDGER_SESSION; gsc -qm "chore(ledger): bad edit") >/dev/null 2>&1
+git -C "$GS" push -q origin HEAD:refs/heads/main >/dev/null 2>&1; rc=$?
+[ "$rc" -ne 0 ] && ok "guard2: the pre-push hook blocks a push containing a violation" || bad "guard2: violating push went through"
+LEDGER_GUARD_SKIP=1 git -C "$GS" push -q origin HEAD:refs/heads/main >/dev/null 2>&1; rc=$?
+[ "$rc" -eq 0 ] && ok "guard2: LEDGER_GUARD_SKIP=1 lets one push through (logged)" || bad "guard2: skip hatch failed on push (rc=$rc)"
+rm -rf "$GS" "$GS.remote"
 
 rm -rf "$SH_SCRATCH" "${PS_SCRATCH:-}" 2>/dev/null || true
 
