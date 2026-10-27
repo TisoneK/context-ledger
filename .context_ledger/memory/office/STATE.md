@@ -5,7 +5,7 @@ at check-in and at exit. This is a DERIVED VIEW for fast orientation;
 open the file a line points at when your task needs more than the
 line gives you. Full reading order: ledger-schema.md. -->
 
-_Regenerated: 2026-10-27T08:22:59Z_
+_Regenerated: 2026-10-27T08:59:38Z_
 
 ## Standing params
 - **Core:** 2.2.0 (locked, verified 2026-10-20)
@@ -20,7 +20,7 @@ _Regenerated: 2026-10-27T08:22:59Z_
 - **Omar** (S015) — Done — Supervisor audit: "v2 broke many things from v1" — investigated core 2.0.0's token-opti…
 - **Ilya** (S016) — Done — Fix the 2.0.3 ps1 ports that made Windows sessions fail their exit gate
 - **Elias** (S019) — Working — Synced this Windows checkout to origin/main (core 2.2.0), ran verify/status, installed th…
-- **Amani** (S020) — Done — Research: what survives a cloud-sandbox reset and why — evidence matrix from three obse…
+- **Amani** (S020) — Done — Part 2 — R4 reset occurred (08:33Z, restore boot): probe `report` run, matrix completed…
 
 ## Current task
 - **2026-10-27 — Amani / GLM (Z.ai) (S020)** — sandbox-persistence research — mechanism identified from live artifacts (overlayfs + repo.tar/PolarFS-mirror restore + gitlink collapse),… — *done*

@@ -84,3 +84,93 @@ The scaffold's `git add -A` sweeps **everything** outside its two-line `.gitigno
 
 - Run `sh tests/sandbox-survival-probe.sh report` after the next reset and paste the matrix into this review's successor.
 - The package suite on this host: **84 passed / 9 failed**, all failures pre-existing on `main` and confined to the `ledger-sync` `src:` source-resolution tests (upstream-fixture behavior differs under this host's git); none in guard/gates/state surfaces. Filed here as a record, not fixed in this session.
+
+---
+
+# Addendum (same session, part 2) — R4 (2026-10-27 08:33 UTC): the matrix, completed
+
+The probe dropped at 08:20Z got its reset within ~13 minutes: the container
+died and a restore boot came up at **08:33:37Z** (`/proc/uptime` 309 s at
+inspection; `/tmp/boot-timeline.log` fresh). Probe `report` run at 08:40Z.
+R2/R3's mechanism model is **revised** below — two of its claims were
+falsified by this reset.
+
+## R4 survival matrix (probe tiers, live)
+
+| Tier | Result | Note |
+|---|---|---|
+| T0 control (tracked) | **survived** | mtime preserved |
+| T2 untracked | **survived**, now tracked | auto-commit `8a8c322` (08:24:45) swept it — the T2 diagnostic fired exactly as designed |
+| T3a `node_modules/` probe (scaffold-ignored) | **died** | |
+| T3b `skills/` probe (scaffold-ignored) | **died** | |
+| T4 embedded repo | **survived — `.git` fully restored** (objects, refs, logs) | **falsifies the gitlink-collapse model as the general rule** |
+| T5 32 MiB file | **survived in both channels** | in `repo.tar` (archive total 92 MB / 2,564 entries) and in the mirror manifest — no ceiling at 32 MiB |
+| T6 deeply nested path | **survived** | |
+| T7 `/home/z` outside project | **died** | |
+| T8 `/tmp` probe | **died** | |
+| T9 root `.secrets/` probe | **survived** | and the auto-commit made it a scaffold-tracked blob — the §6 exposure re-confirmed |
+| T10 empty directory | **died** | |
+| T11 hidden file | **survived** | |
+| **Bonus: both embedded clones** (LocalMind @ dc0ea44c, context-ledger @ 7b1e357) | **survived fully, including `.git/config`** | `credential.helper` intact → the check-in push `d127b34` worked with **zero manual rewiring** (vs. R3's full re-wiring) — a live auth test passed 7 minutes after boot |
+| **Bonus: in-repo secrets** (`LocalMind/.context_ledger/memory/secrets/github-pat`) | **survived** | see the corrected security note below |
+
+## Mechanism, revised
+
+- **Channel A — pre-stop `repo.tar` (primary, when it works):** a
+  **filesystem-level** tar of the whole project dir. It honors **only the
+  scaffold's `.gitignore`** (`skills/`, `node_modules/`) — NOT nested ones.
+  That is why it carries: embedded repos' inner `.git` trees, files under
+  nested-gitignored paths (the ledger secrets dir came back, mtime 06:17),
+  untracked-but-not-ignored files (T2), root `.secrets/` and `.env`, with
+  mtimes preserved. Written at container stop (archive mtime 08:30).
+- **Channel B — PolarFS mirror (secondary):** the `git ls-files`-shaped
+  subset + mtime manifest; gitlinks materialize as **empty dirs** (confirmed:
+  `/tmp/my-project/LocalMind/` and `/tmp/my-project/context-ledger/` are both
+  empty). Snapshot lag is real but event-coupled: the manifest updated at
+  08:24:44 — ~4 min after the probe drop and the same second as auto-commit
+  `8a8c322` — versus part 1's 40+ minutes of no update.
+- **R2/R3 clone deaths reattributed:** not gitlink collapse per se —
+  **Channel A failing or stale at those stops** (`/start.sh`'s own branch
+  comment codes this: no/stale `repo.tar` = "last pre-stop write failed").
+  R4 is the proof-by-success: same kind of embedded clone, same host, and it
+  returns intact when the pre-stop write lands.
+- **New finding — the boot chmod sweep:** the restore path runs
+  `chmod -R 755` over the project (`/start.sh` restore branch + a parallel
+  chown/chmod pass). Consequences, all verified live: (a) every 644-tracked
+  file returns with mode 755 → **git mode-dirt in every restored worktree**
+  (1,602 files in LocalMind alone; content untouched — `git diff --summary`
+  shows `mode change` only); (b) **secrets drop to world-readable in-sandbox**
+  (`lm_pat` 0600 → 755; single-user host, but restore 0600 after every reset);
+  (c) the dirt only appears after *restore* boots — clean boots create files
+  after the sweep, which is why R2/R3 sessions never saw it.
+- `.env` is **rewritten by the boot itself** (mtime = boot time) — the one
+  file where neither restore channel's content wins.
+
+## Part 1 §8 open questions — answered/updated
+
+- **Probe report after next reset:** done — this addendum.
+- **Snapshot cadence:** second data point (manifest 08:24:44, coupled with
+  the auto-commit). Combined with part 1: lag is real, variable, and
+  event-coupled — the push-early rule stands.
+- **Auto-commit trigger:** second data point — both observed fires
+  (`e5a2c20`, `8a8c322`) trail a `worklog.md` edit by seconds.
+  Worklog-edit-correlation is now the leading hypothesis; still not proven.
+- **Size ceiling:** ≥ 32 MiB passes both channels.
+- **tar-vs-mirror precedence:** for embedded repos the tar is the *only*
+  channel that carries content (mirror has empty dirs) — no conflict observed;
+  `.env` is boot-rewritten regardless.
+
+## Security note, corrected (supersedes part 1 §6's persistence claim)
+
+Part 1 claimed in-repo secrets "do not persist or travel" (gitlink
+collapse). R4 **falsifies the persistence half on this host**: the ledger
+secrets file returned via `repo.tar`. The **GitHub-leak half still holds** —
+in-repo secrets are invisible to the scaffold repo (their home repo is a
+gitlink), so the scaffold's `git add -A` can never track them and they can
+never reach a real remote. Net for the protocol: on tar-restoring hosts,
+*both* placements survive resets and both leave the container into platform
+storage; the ledger secrets-dir rule remains correct for leak-prevention,
+rotation after any exposure remains standing practice, and **restore 0600
+after every reset** because the boot sweep strips it. A root-level `.secrets/`
+dir remains the worse placement (it becomes a scaffold-tracked blob *and* a
+mirror key on top of riding the tar).
