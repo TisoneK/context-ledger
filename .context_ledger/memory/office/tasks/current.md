@@ -12,6 +12,6 @@ entry and backlog before starting.
 - **Status:** in-progress | done | blocked (<blocker>)
 -->
 
-- **Session:** —
-- **Task:** none — no session in progress
-- **Status:** idle
+- **Session:** 2026-10-27 — Amani / GLM (Z.ai) (S020)
+- **Task:** sandbox-persistence research — mechanism identified from live artifacts (overlayfs + repo.tar/PolarFS-mirror restore + gitlink collapse), 12-tier survival probe committed and dropped on the host
+- **Status:** done
