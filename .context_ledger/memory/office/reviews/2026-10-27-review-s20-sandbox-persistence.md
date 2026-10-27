@@ -74,6 +74,7 @@ The scaffold's `git add -A` sweeps **everything** outside its two-line `.gitigno
 
 ## 8. Open questions (for the probe to answer)
 
+- **Snapshot cadence (live data point, same session):** the host mirror manifest had **not** updated 40+ minutes after the probe markers were dropped (last write 07:47Z, drop 08:20Z; zero probe keys in the manifest, no `probe-survival/` in the mirror). The snapshotter is not continuous — observed lag ≥ 40 min — so **work from the final stretch of a session can be absent from the mirror at reset time**. The pre-stop `repo.tar` write (and the push) are what catch the tail. Durability rule reinforced: push early, push often.
 - The auto-commit fired 14 s after a worklog edit in this session, yet the pre-reset scaffold reflog had **no** auto-commits despite hours of file edits in the prior container — trigger unknown (image-version difference vs specific trigger paths). The T2 untracked tier is the diagnostic.
 - `repo.tar` write cadence: observed mtime = boot+12 min on one host; the `src:` snapshot cadence of the PolarFS mirror is also unobserved (manifest writes seen at 02:22 and 07:47).
 - Size ceiling: is the 32 MiB tier mirrored, truncated, or dropped?
