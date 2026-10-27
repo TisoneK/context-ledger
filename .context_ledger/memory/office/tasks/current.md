@@ -12,6 +12,6 @@ entry and backlog before starting.
 - **Status:** in-progress | done | blocked (<blocker>)
 -->
 
-- **Session:** 2026-10-27 — Amani / GLM (Z.ai) (S020)
-- **Task:** sandbox-persistence research — mechanism identified from live artifacts (overlayfs + repo.tar/PolarFS-mirror restore + gitlink collapse), 12-tier survival probe committed and dropped on the host
+- **Session:** 2026-10-27 — Amani / GLM (Z.ai) (S020) — part 3
+- **Task:** core 2.2.1 built and self-hosted — sandbox reset recovery + continuation guidance (durability law, five-step runbook, secrets hardening) per the supervisor's "go ahead" on all four playbook decisions
 - **Status:** done

@@ -5,10 +5,10 @@ at check-in and at exit. This is a DERIVED VIEW for fast orientation;
 open the file a line points at when your task needs more than the
 line gives you. Full reading order: ledger-schema.md. -->
 
-_Regenerated: 2026-10-27T08:59:38Z_
+_Regenerated: 2026-10-27T09:31:13Z_
 
 ## Standing params
-- **Core:** 2.2.0 (locked, verified 2026-10-20)
+- **Core:** 2.2.1 (locked, verified 2026-10-27)
 - **Target:** general sweep unless the user's chat message names a task
 - **Scope:** discovery + review + fix all safe issues
 - **Push policy:** push to main directly after each commit
@@ -20,10 +20,10 @@ _Regenerated: 2026-10-27T08:59:38Z_
 - **Omar** (S015) — Done — Supervisor audit: "v2 broke many things from v1" — investigated core 2.0.0's token-opti…
 - **Ilya** (S016) — Done — Fix the 2.0.3 ps1 ports that made Windows sessions fail their exit gate
 - **Elias** (S019) — Working — Synced this Windows checkout to origin/main (core 2.2.0), ran verify/status, installed th…
-- **Amani** (S020) — Done — Part 2 — R4 reset occurred (08:33Z, restore boot): probe `report` run, matrix completed…
+- **Amani** (S020) — Done — Part 3 — supervisor ruled on all four 2.2.1 decisions ("go ahead"): build core 2.2.1 PA…
 
 ## Current task
-- **2026-10-27 — Amani / GLM (Z.ai) (S020)** — sandbox-persistence research — mechanism identified from live artifacts (overlayfs + repo.tar/PolarFS-mirror restore + gitlink collapse),… — *done*
+- **2026-10-27 — Amani / GLM (Z.ai) (S020) — part 3** — core 2.2.1 built and self-hosted — sandbox reset recovery + continuation guidance (durability law, five-step runbook, secrets hardening) … — *done*
 
 ## Backlog — High priority (the top of the queue)
 | B-2026-10-04-1 | Run core 2.2.0's `ledger-guard.ps1` (install of all three hooks + `--ci`; `sessions`/`heartbeat`/`release`/`push-check`/`remind` delegating to sh via Join-Path backslash paths) and the PowerShell halves of `ledger-gates.ps1` (Record-Pass / Clear-Pass / install nudge) on a Windows box (5.1 via `ledger-guard.cmd`, and pwsh 7): `install`, `status`, `remind`, `tool-check` with JSON on stdin (exit 2 on a piped gate), then confirm the git hook (always the sh edition) accepts a commit after the ps1 gate run, i.e. the ps1 marker tree equals the sh `write-tree`. Written with no engine on hand; fix whatever breaks, log it, add the ps1 test half. |

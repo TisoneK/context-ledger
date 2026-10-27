@@ -65,6 +65,7 @@ out of the queue, not into the void.
 
 | ID | Summary |
 |----|---------|
+| P-2026-10-27-2 | Secrets-mode guard in `ledger-guard`: warn (never fail) when a `memory/secrets/` file is group/world-readable — exactly what a restore boot's permission sweep does to this host's files. Consciously deferred from core 2.2.1 as tooling (supervisor ruling, decision 4 of the sandbox-continuation playbook); natural fit for the 2.3.x line. Promote to the backlog when 2.3.x scoping starts. |
 
 ## Someday
 
