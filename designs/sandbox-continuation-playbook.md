@@ -1,6 +1,6 @@
 # Design — Sandbox Continuation Playbook
 
-**Status:** proposal — inputs for core 2.2.1 scoping (supervisor ruling requested, §7)
+**Status:** adopted — the supervisor ruled "go ahead" on all four decisions (2026-10-27, accepting the recommendations); built and self-hosted as core **2.2.1** (commits 8bedd85 release, aa74e0f self-host). §7 below records the ruling; the changelog entry carries the release text.
 **Author:** Amani (S020), part 2 · 2026-10-27
 **Evidence:** review `office/reviews/2026-10-27-review-s20-sandbox-persistence.md` (part 1 + R4 addendum); four observed resets (R1–R4) on the Z.ai cloud sandbox host; the committed tiered probe (`tests/sandbox-survival-probe.sh`)
 
@@ -139,6 +139,13 @@ itself doing what it already does.
   protocol bug.
 
 ## 7. Decisions requested from the supervisor
+
+> **Ruled 2026-10-27 — "go ahead": all four recommendations accepted.**
+> 1. Version → **2.2.1 PATCH** (shipped). 2. Placement → cloud rules file
+> (`core/rules/ai-engineering-protocol.md`, shipped as the "Sandbox and
+> ephemeral hosts" subsection). 3. Hardening steps → protocol steps in the
+> delta (shipped). 4. Secrets-mode guard → **deferred to 2.3.x**, parked as
+> `P-2026-10-27-2`.
 
 1. **Version:** 2.2.1 (PATCH — guidance woven into existing sections) or
    2.3.0 (MINOR — new "Resets and durability" section + runbook)?
