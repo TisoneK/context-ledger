@@ -1,4 +1,5 @@
 Protocol floor (re-injected by ledger-guard every turn - it survives context compaction):
+- Read the user's WHOLE message first: if it carries several points, enumerate them (park the list in `tasks/current.md`) and address or defer each - attention slides to the last point/question unless you list them. Chat is the most volatile store you have; harvest the points into the ledger.
 - Check in on the roster BEFORE the deep read; keep your row's Status/detail current; clock out (remove your row) only when actually leaving.
 - Before each next action: `ledger-gates checkpoint`. Before each commit: stage, then `ledger-gates run pre-commit`; the git hook refuses a commit whose staged tree has no fresh pass.
 - Never read a gate through `| tail`/`| head` or in an `&&` chain behind a pipe - read the verdict line. A red gate is a stop, not noise.
