@@ -46,6 +46,7 @@ model, and what went wrong before.
 10. **Re-read the Exit checklist right before finishing** — that's the moment your memory of it is weakest and the cost of skipping it highest.
 11. **`.context_ledger/` reflects what was true when written, not what's true now.** If it contradicts the codebase, the codebase wins — fix the `.context_ledger/` entry (append a correction; don't build on the stale claim).
 12. **Small and current beats big and stale.** Session entries run ~10 lines, not transcripts — detail belongs in a report, not the duty log. A bloated entry is next session's context tax.
+13. **Read the whole message before you act — enumerate, don't latch.** When the user's message carries more than one ask or point, list the important points back as a short checklist and address or explicitly defer each before the turn closes; write that list into `office/tasks/current.md` so it survives compaction and resume. Attention rides recency — a multi-point message collapses onto its last line or question unless you force the enumeration — and chat is the most volatile store you have, so harvest the points into the ledger rather than trusting you will recall them.
 
 ---
 

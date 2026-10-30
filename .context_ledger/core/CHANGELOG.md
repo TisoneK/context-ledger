@@ -10,6 +10,32 @@ bump MINOR; wording and fixes bump PATCH.
 
 ---
 
+## 2.2.2 — 2026-10-30
+
+**Input-comprehension floor: read the whole message, enumerate, don't latch.**
+A logged flaw (`office/flaws/log.md`, S021): when the user packs several
+points into one message — especially one ending on a question — attention
+rides recency and the agent acts on the last point, silently dropping the
+rest. The protocol governed what *rules* are collected (kickoff, the STATE
+digest, the per-turn re-injection) but treated the user's own message as
+understood by default. This closes the *intake* half of the decay Priya
+logged (S018): 2.1.0 pushes rules *into* context; nothing pulled the user's
+points back *out*.
+
+- **New binding rule (both protocol editions):** "Read the whole message
+  before you act — enumerate, don't latch." A multi-point message is listed
+  back as a short checklist, each point addressed or explicitly deferred,
+  and the list written into `office/tasks/current.md` so it survives
+  compaction and resume — chat is the most volatile store there is.
+- **New line in `guard-reminder.md`** (the floor `ledger-guard` re-injects
+  every turn): the same directive, so it lands in the attended slot instead
+  of being prose that decays.
+- PATCH: guidance fix for a logged flaw; no new tooling, schema, or
+  template files. Design rationale:
+  `designs/sibling-cohorts-and-input-comprehension.md` §4.
+
+---
+
 ## 2.2.1 — 2026-10-27
 
 **Guidance fix: sandbox/ephemeral hosts — what survives a platform reset,
