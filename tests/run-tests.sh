@@ -1125,6 +1125,8 @@ sed -i.bak 's/^at=.*/at=1000000000/' "$GS/.git/ledger-sessions/S002" && rm -f "$
 out=$($GSG remind 2>&1)
 case $out in *"STALE? Yan (S002)"*) ok "guard2: remind flags a roster row whose session went quiet" ;; *) bad "guard2: stale row not flagged"; say "$out" ;; esac
 case $out in *"You are: S001"*) ok "guard2: with the other session expired, remind identifies the author" ;; *) bad "guard2: remind identity wrong"; say "$out" ;; esac
+# resume-proof exit reminder: the live author's own Working row is still open, so remind must surface the clock-out it owes
+case $out in *"OPEN SESSION"*) ok "guard2: remind reminds the live author of the clock-out it still owes" ;; *) bad "guard2: no resume-proof exit reminder"; say "$out" ;; esac
 $GSG release S002 >/dev/null 2>&1; $GSG sessions | grep -q 'S002' && bad "guard2: release left the session registered" || ok "guard2: release drops the session"
 # push-check: surfaces and append-only logs
 BASE=$(git -C "$GS" rev-parse HEAD)

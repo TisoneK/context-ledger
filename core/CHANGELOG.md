@@ -10,6 +10,30 @@ bump MINOR; wording and fixes bump PATCH.
 
 ---
 
+## 2.3.2 — 2026-10-31
+
+**Fix: the ledger reminds you to clock out, instead of trusting you to
+remember.** The Exit checklist / clock-out is the most-forgotten step for
+every agent (`flaws/log.md`, S021) — worst right after a **session resume**,
+when the fact that you even hold an open row has dropped out of context.
+"Session end" is not a git event, so it can't be gated like a commit or a
+push; the reliable lever is resume-proof *reminding*:
+
+- `ledger-guard remind` — the per-turn prompt hook that already survives
+  compaction and fires on the first turn after a resume — now detects that
+  your own roster row is still open (your live session matches a non-`Done`
+  row) and spells out the Exit checklist + the clock-out you owe. So a
+  resumed agent is re-told "you're mid-session" instead of starting blank.
+- A matching line in the `guard-reminder.md` floor (both editions, and the
+  no-`sh` Windows fallback that only prints the floor) carries the same
+  directive statically.
+- PATCH, backward-compatible, no new capability. Complements the existing
+  next-session self-heal (stale-row detection). Still open, not yet built:
+  the `ledger-gates run exit` assertion and a pre-push warning — tracked in
+  `flaws/log.md`.
+
+---
+
 ## 2.3.1 — 2026-10-31
 
 **Fixes from a live cohort run + supervisor review — batched into one PATCH
