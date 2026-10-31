@@ -13,5 +13,5 @@ entry and backlog before starting.
 -->
 
 - **Session:** (idle)
-- **Task:** none in progress — S021 (Soren) clocked out 2026-10-31 after shipping core 2.2.2/2.3.0/2.3.1/2.3.2 and the live rewind cohort
+- **Task:** none in progress — S021 (Soren) closed out 2026-10-31 after shipping core 2.3.3 (exit-check gate + push-check warning + self-correcting `ledger-mem audit` + Binding Rule 15), on top of 2.2.2/2.3.0/2.3.1/2.3.2 and the live rewind cohort
 - **Status:** done
