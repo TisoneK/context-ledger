@@ -535,6 +535,52 @@ else
 fi
 rm -rf "$PRUNE_SCRATCH"
 
+# ---- ledger-mem audit: self-correcting flaw surfacing (core 2.3.3) ----------
+# The flaw log must stop being write-only: audit reports the OPEN flaws and the
+# themes that recur across 3+ OPEN entries, so the ledger raises "this keeps
+# happening" itself. Closed entries count toward neither. --brief is the compact
+# line the per-turn remind hook shows.
+AUD=${TMPDIR:-/tmp}/ledger-test-audit
+rm -rf "$AUD"
+mkdir -p "$AUD/.context_ledger/core/bin" "$AUD/.context_ledger/memory/office/flaws"
+cp "$CORE/bin/ledger-mem" "$AUD/.context_ledger/core/bin/ledger-mem"
+cat > "$AUD/.context_ledger/memory/office/flaws/log.md" <<'AUDFIX'
+# Flaws Log
+<!-- TEMPLATE -- copy below the last entry:
+## YYYY-MM-DD -- T / m
+- **Flaw:** placeholder clock-out clock-out clock-out
+- **Status:** open
+-->
+## 2026-09-01 -- A / m
+- **Flaw:** the clock-out step was skipped after a resume
+- **Status:** open
+## 2026-09-02 -- B / m
+- **Flaw:** clock-out missed again at closeout time
+- **Status:** open
+## 2026-09-03 -- C / m
+- **Flaw:** forgot clock-out when ending the shift
+- **Status:** open
+## 2026-09-04 -- D / m
+- **Flaw:** clock-out reminder absent
+- **Status:** fixed in package abc1234
+## 2026-09-05 -- E / m
+- **Flaw:** staging the whole directory committed a peer file
+- **Status:** open
+AUDFIX
+AUDM="sh $AUD/.context_ledger/core/bin/ledger-mem"
+out=$($AUDM audit 2>&1)
+case $out in *"5 entries, 4 open"*) ok "audit: counts total entries and open ones (closed excluded)" ;; *) bad "audit: wrong entry/open counts"; say "$out" ;; esac
+case $out in *'"clock-out" in 3 open entries'*) ok "audit: surfaces a theme recurring across 3+ open entries" ;; *) bad "audit: recurrence not detected"; say "$out" ;; esac
+# the closed entry's clock-out must NOT push the count to 4; the template comment must not segment
+case $out in *'"clock-out" in 4 open'*) bad "audit: closed entry/template counted toward recurrence" ;; *) ok "audit: closed entry and template comment excluded from recurrence" ;; esac
+out=$($AUDM audit --brief 2>&1)
+case $out in *"Open flaws"*"4"*"recurring"*"clock-out (3)"*) ok "audit --brief: compact open-count + recurrence line for the remind hook" ;; *) bad "audit --brief: wrong compact line"; say "$out" ;; esac
+# a log with no open entries stays quiet in --brief (nothing for remind to show)
+printf '# Flaws\n## 2026-09-09 -- Z / m\n- **Flaw:** one-off\n- **Status:** fixed in package deadbee\n' > "$AUD/.context_ledger/memory/office/flaws/log.md"
+out=$($AUDM audit --brief 2>&1)
+[ -z "$out" ] && ok "audit --brief: silent when nothing is open or recurring" || { bad "audit --brief: noisy on a clean log"; say "$out"; }
+rm -rf "$AUD"
+
 # ---- ledger-mem check: flaws_cap / inefficiencies_cap nudge (core 2.0.0) -----
 # Mirrors the existing backlog_cap test shape: past the cap warns without
 # failing; the conf key raises it. 16 entries vs. the default cap of 15.
@@ -1152,6 +1198,35 @@ git -C "$GS" push -q origin HEAD:refs/heads/main >/dev/null 2>&1; rc=$?
 [ "$rc" -ne 0 ] && ok "guard2: the pre-push hook blocks a push containing a violation" || bad "guard2: violating push went through"
 LEDGER_GUARD_SKIP=1 git -C "$GS" push -q origin HEAD:refs/heads/main >/dev/null 2>&1; rc=$?
 [ "$rc" -eq 0 ] && ok "guard2: LEDGER_GUARD_SKIP=1 lets one push through (logged)" || bad "guard2: skip hatch failed on push (rc=$rc)"
+# ---- exit-check + push-check row-Working notice (core 2.3.3) -----------------
+# The close-out made mechanical. S001 is the resolvable session; its roster row
+# is still Working, so a push warns and a bare exit-check fails until the shift
+# is properly ended.
+mkdir -p "$GS/.context_ledger/memory/office/tasks"
+# (a) push-check warns (never blocks) when you push with your own row Working
+BASE=$(git -C "$GS" rev-parse HEAD)
+printf 'x\nreplaced\nclean append\n' > "$GS/.context_ledger/memory/office/flaws/log.md"
+(LEDGER_SESSION=S001; export LEDGER_SESSION; gsc -qm "chore(ledger): clean append") >/dev/null 2>&1
+out=$(LEDGER_SESSION=S001 $GSG push-check "$BASE..HEAD" 2>&1)
+case $out in *"row S001 is still Working"*) ok "guard2: push-check warns when you push with your own row still Working" ;; *) bad "guard2: no row-Working push notice"; say "$out" ;; esac
+# (b) exit-check fails while the close-out is incomplete (row Working, no
+#     session entry, task still in-progress -- all three reasons at once)
+printf '# Current\n- **Status:** in-progress\n' > "$GS/.context_ledger/memory/office/tasks/current.md"
+out=$(LEDGER_SESSION=S001 $GSG exit-check 2>&1); rc=$?
+[ "$rc" -ne 0 ] && case $out in *"still Working"*) ok "guard2: exit-check fails when the row is left Working" ;; *) bad "guard2: exit-check wrong reason"; say "$out" ;; esac || bad "guard2: incomplete close-out passed exit-check"
+case $out in *"in-progress"*) ok "guard2: exit-check fails on an in-progress current.md" ;; *) bad "guard2: exit-check missed in-progress"; say "$out" ;; esac
+case $out in *"no session entry for S001"*) ok "guard2: exit-check fails when no session entry is logged" ;; *) bad "guard2: exit-check missed the missing session entry"; say "$out" ;; esac
+# (c) exit-check passes once logged, cleared, and the row is no longer Working
+#     (Done counts as clocked out -- a parked Done row is a legitimate ending)
+printf '## 2026-01-01 Session 1 -- Zed (S001)\nshift notes\n' > "$GS/.context_ledger/memory/office/agents/sessions.md"
+printf '# Current\n- **Status:** done\n' > "$GS/.context_ledger/memory/office/tasks/current.md"
+sed -i.bak 's/| Zed | S001 | m | thing | Working | mid-way |/| Zed | S001 | m | thing | Done | shipped |/' "$GS/.context_ledger/memory/office/agents/roster.md" && rm -f "$GS/.context_ledger/memory/office/agents/roster.md.bak"
+out=$(LEDGER_SESSION=S001 $GSG exit-check 2>&1); rc=$?
+[ "$rc" -eq 0 ] && case $out in *"row not left Working. OK"*) ok "guard2: exit-check passes a complete close-out (Done row counts as ended)" ;; *) bad "guard2: exit-check pass message wrong"; say "$out" ;; esac || bad "guard2: complete close-out failed exit-check (rc=$rc)"
+# (d) remind surfaces the open flaws every turn -- the ledger raises them itself
+printf '# Flaws Log\n## 2026-01-02 -- Zed (S001)\n- **Flaw:** clock-out skipped again after a resume\n- **Status:** open\n' > "$GS/.context_ledger/memory/office/flaws/log.md"
+out=$($GSG remind 2>&1)
+case $out in *"Open flaws"*) ok "guard2: remind surfaces the open flaws each turn (ledger self-audit)" ;; *) bad "guard2: remind does not surface open flaws"; say "$out" ;; esac
 rm -rf "$GS" "$GS.remote"
 
 # ---- ledger-collab cohort + ledger-state reconcile (core 2.3.0) -------------
