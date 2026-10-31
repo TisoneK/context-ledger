@@ -111,7 +111,7 @@ cmd_remind() {
   _r=$MEMORY_DIR/office/agents/roster.md
   if [ -f "$_r" ]; then
     say "Board (rows not Done):"
-    grep -E '^\| *[^|-][^|]*\| *S[0-9]+ ' "$_r" | awk -F'|' '{ gsub(/^ +| +$/, "", $2); gsub(/^ +| +$/, "", $3); gsub(/^ +| +$/, "", $6); gsub(/^ +| +$/, "", $7); if ($6 != "Done") print "  - " $2 " (" $3 ") " $6 ": " substr($7, 1, 100) }'
+    grep -E '^\| *[^|-][^|]*\| *(S[0-9]+|OF[0-9]+SS[0-9]+) ' "$_r" | awk -F'|' '{ gsub(/^ +| +$/, "", $2); gsub(/^ +| +$/, "", $3); gsub(/^ +| +$/, "", $6); gsub(/^ +| +$/, "", $7); if ($6 != "Done") print "  - " $2 " (" $3 ") " $6 ": " substr($7, 1, 100) }'
   fi
   _c=$MEMORY_DIR/office/tasks/current.md
   if [ -f "$_c" ]; then
@@ -145,7 +145,11 @@ sessions_dir() {
   case "$_sc" in /*) ;; *) _sc=$PROJECT_DIR/$_sc ;; esac
   printf '%s/ledger-sessions\n' "$_sc"
 }
-valid_codename() { case "$1" in S[0-9][0-9][0-9]|S[0-9][0-9][0-9][0-9]) return 0 ;; esac; return 1; }
+valid_codename() {
+  # legacy office-local S<NNN>, or structured OF<oo>SS<ss> (office+session,
+  # globally unique). Both are accepted everywhere; cohorts generate the latter.
+  printf '%s' "${1:-}" | grep -Eq '^(S[0-9]{3,4}|OF[0-9]+SS[0-9]+)$'
+}
 now_s() { date +%s; }
 sess_field() { sed -n "s/^$2=//p" "$1" | head -n1 | tr -d '\r'; }
 
@@ -187,7 +191,7 @@ resolve_session() {
 roster_open_rows() { # name|codename|status for every row that is not Done
   _rr=$MEMORY_DIR/office/agents/roster.md
   [ -f "$_rr" ] || return 0
-  grep -E '^\| *[^|-][^|]*\| *S[0-9]+ ' "$_rr" | awk -F'|' '{ for (i = 2; i <= 6; i++) gsub(/^ +| +$/, "", $i); if ($6 != "Done") print $2 "|" $3 "|" $6 }'
+  grep -E '^\| *[^|-][^|]*\| *(S[0-9]+|OF[0-9]+SS[0-9]+) ' "$_rr" | awk -F'|' '{ for (i = 2; i <= 6; i++) gsub(/^ +| +$/, "", $i); if ($6 != "Done") print $2 "|" $3 "|" $6 }'
 }
 
 stale_rows() { # roster rows still open whose registered session has gone quiet

@@ -52,6 +52,8 @@ MEMORY_DIR=$LEDGER_DIR/memory
 COLLAB_DIR=$MEMORY_DIR/collaboration
 EVENT_DIR=$COLLAB_DIR/events
 OFFICE_DIR=$MEMORY_DIR/office
+HISTORY_DIR=$LEDGER_DIR/history
+ARCHIVE_DIR=$LEDGER_DIR/archive
 
 validate_value() {
   _label=$1; _value=$2
@@ -425,8 +427,24 @@ cohort_usage() {
   exit 2
 }
 
-# highest session/codename number currently on the board or in the duty log,
-# read once so a cohort's block is contiguous and cannot race a peer.
+# current office number = (highest frozen office on record) + 1. Mirrors
+# ledger-history max_office_num; the records in history/ and archive/ are
+# permanent, so the sequence is always derivable with no state file.
+cohort_office_num() {
+  _max=0
+  for _p in "$HISTORY_DIR"/office-*.md "$HISTORY_DIR"/office-*/ "$ARCHIVE_DIR"/office-*.tar.gz; do
+    [ -e "$_p" ] || continue
+    _b=$(basename "$_p"); _b=${_b%%.*}
+    _n=$(printf '%s' "$_b" | sed -n 's/^office-0*\([0-9][0-9]*\)$/\1/p')
+    case "$_n" in ''|*[!0-9]*) continue ;; esac
+    [ "$_n" -gt "$_max" ] && _max=$_n
+  done
+  echo $((_max + 1))
+}
+
+# highest session number currently on the board or in the duty log, read once
+# so a cohort's block is contiguous and cannot race a peer. Reads the session
+# number out of BOTH codename forms: legacy S<n> and structured OF<oo>SS<n>.
 cohort_next_num() {
   _roster=$OFFICE_DIR/agents/roster.md
   _sessions=$OFFICE_DIR/agents/sessions.md
@@ -436,6 +454,7 @@ cohort_next_num() {
       /^[[:space:]]*\|/ {
         code=$3; gsub(/^[[:space:]]+|[[:space:]]+$/, "", code)
         if (code ~ /^[Ss][0-9]+$/) { n=substr(code,2)+0; if (n>mx) mx=n }
+        else if (code ~ /^OF[0-9]+SS[0-9]+$/) { c=code; sub(/^OF[0-9]+SS/, "", c); n=c+0; if (n>mx) mx=n }
       }
       END { print mx+0 }' "$_roster")
     [ "$_m" -gt "$_max" ] && _max=$_m
@@ -494,10 +513,13 @@ cohort_open() {
   [ -n "$_cohort" ] || _cohort="C-$(date -u +%Y%m%dT%H%M%SZ)"
   validate_id cohort "$_cohort"
   _base=$(cohort_next_num)
-  # contiguous reserved codenames, read from the board in one shot
+  _office=$(cohort_office_num)
+  # contiguous reserved codenames, read from the board in one shot. Structured
+  # OF<oo>SS<ss> form: office number + session number, globally unique across
+  # offices and the fleet (legacy S<NNN> is still accepted everywhere).
   _codes=""; _k=0
   while [ "$_k" -lt "$_count" ]; do
-    _code=$(printf 'S%03d' "$((_base + _k))")
+    _code=$(printf 'OF%02dSS%02d' "$_office" "$((_base + _k))")
     _codes="${_codes:+$_codes,}$_code"
     _k=$((_k + 1))
   done

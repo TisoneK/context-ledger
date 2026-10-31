@@ -129,7 +129,7 @@ function RosterBlock {
     $c = $line.Split('|')
     if ($c.Count -lt 4) { continue }
     $name = $c[1].Trim(); $code = $c[2].Trim()
-    if ($code -notmatch '^[Ss][0-9]+$') { continue }
+    if ($code -notmatch '^([Ss][0-9]+|OF[0-9]+SS[0-9]+)$') { continue }
     $doing = if ($c.Count -ge 5) { $c[4].Trim() } else { '' }
     $status = if ($c.Count -ge 6) { $c[5].Trim() } else { '' }
     $rows += [pscustomobject]@{ Name = $name; Code = $code; Status = $status; Doing = $doing }

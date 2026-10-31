@@ -10,6 +10,37 @@ bump MINOR; wording and fixes bump PATCH.
 
 ---
 
+## 2.3.1 — 2026-10-31
+
+**Fixes from a live cohort run + supervisor review — batched into one PATCH
+rather than dripped as separate releases.**
+
+- **Global codenames — fixes the office-local ambiguity.** A codename was
+  office-local `S<NNN>`, which means nothing the moment two offices or two
+  fleet projects are compared (the same `S001` recurs in every office). New
+  sessions and `ledger-collab cohort open` now generate the structured
+  **`OF<oo>SS<ss>`** form — office number (frozen offices in `history/` plus
+  one) + session number — globally unique. Fully backward-compatible: every
+  tool (`ledger-collab`, `ledger-mem`, `ledger-state`, and `ledger-guard` via
+  the sh edition) accepts BOTH forms, legacy rows keep working, nothing
+  migrates. sh + ps1.
+- **Binding Rule 14 (both editions) + a guard-reminder line — "Think past
+  the literal: read intent, don't just execute the words."** With the
+  manager corollary: a parent directing sibling agents gives the goal, the
+  interface and the quality bar — not a procedure — lets the protocol do what
+  it already enforces (agents self-name, check in, run the gates), and
+  supervises for drift instead of dictating or vanishing. Encodes the
+  operating doctrine surfaced across a session of supervisor corrections.
+- Docs: roster header and schema codename definition updated to the
+  structured form; the "Sibling cohorts" section notes the parent-as-manager
+  role and that the parent pre-allocates the **codename** but never the
+  **name** — the agent self-names, because the protocol already enforces it.
+- PATCH, not MINOR: an ambiguity fix plus a conduct rule from a logged
+  pattern, backward-compatible, adding no new user-invoked capability.
+  Rationale: `designs/sibling-cohorts-and-input-comprehension.md` §5.
+
+---
+
 ## 2.3.0 — 2026-10-30
 
 **Sibling cohorts: a wave of agents, spawned together, modeled as one.**
