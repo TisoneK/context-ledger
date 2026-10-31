@@ -62,6 +62,8 @@ $coreDir = (Resolve-Path (Join-Path $scriptDir '..')).Path
 $ledgerDir = Split-Path -Parent $coreDir
 $eventDir = Join-Path $ledgerDir 'memory/collaboration/events'
 $officeDir = Join-Path $ledgerDir 'memory/office'
+$historyDir = Join-Path $ledgerDir 'history'
+$archiveDir = Join-Path $ledgerDir 'archive'
 
 function Validate-Value { param([string]$Name, [string]$Value)
   if ([string]::IsNullOrWhiteSpace($Value) -or $Value.Contains("`n") -or $Value.Contains("`r")) {
@@ -309,6 +311,21 @@ function Cohort-Usage {
   ) | ForEach-Object { Say $_ }
   exit 2
 }
+# current office number = (highest frozen office on record) + 1. Mirrors the
+# sh cohort_office_num / ledger-history max_office_num; records are permanent.
+function Get-CohortOfficeNum {
+  $max = 0
+  $globs = @((Join-Path $historyDir 'office-*.md'), (Join-Path $historyDir 'office-*'), (Join-Path $archiveDir 'office-*.tar.gz'))
+  foreach ($g in $globs) {
+    foreach ($p in (Get-ChildItem -Path $g -ErrorAction SilentlyContinue)) {
+      $b = $p.BaseName -replace '\..*$', ''
+      if ($b -match '^office-0*([0-9]+)$') { $n = [int]$Matches[1]; if ($n -gt $max) { $max = $n } }
+    }
+  }
+  return ($max + 1)
+}
+# highest session number on the board or in the duty log, reading the session
+# number out of BOTH codename forms: legacy S<n> and structured OF<oo>SS<n>.
 function Get-CohortNextNum {
   $roster = Join-Path $officeDir 'agents/roster.md'
   $sessions = Join-Path $officeDir 'agents/sessions.md'
@@ -320,6 +337,7 @@ function Get-CohortNextNum {
       if ($cells.Count -lt 4) { continue }
       $code = $cells[2].Trim()
       if ($code -match '^[Ss]([0-9]+)$') { $n = [int]$Matches[1]; if ($n -gt $max) { $max = $n } }
+      elseif ($code -match '^OF[0-9]+SS([0-9]+)$') { $n = [int]$Matches[1]; if ($n -gt $max) { $max = $n } }
     }
   }
   if (Test-Path -LiteralPath $sessions) {
@@ -366,7 +384,10 @@ function Cohort-Open { param([string[]]$OptArgs)
   if (-not $cohort) { $cohort = 'C-' + [DateTime]::UtcNow.ToString("yyyyMMddTHHmmss'Z'") }
   Validate-Id 'cohort' $cohort
   $base = Get-CohortNextNum
-  $codesArr = @(); for ($k = 0; $k -lt $countN; $k++) { $codesArr += ('S{0:D3}' -f ($base + $k)) }
+  $office = Get-CohortOfficeNum
+  # structured OF<oo>SS<ss> codename: office + session, globally unique
+  # (legacy S<NNN> still accepted everywhere).
+  $codesArr = @(); for ($k = 0; $k -lt $countN; $k++) { $codesArr += ('OF{0:D2}SS{1:D2}' -f $office, ($base + $k)) }
   $codes = $codesArr -join ','
   # append one reserved roster row per member, after the last table row
   $lines = @(Get-Content -Encoding UTF8 -LiteralPath $roster)

@@ -1169,13 +1169,13 @@ printf '| Name | Codename | Model | Doing | Status | Status detail |\n|---|---|-
 sh "$COLLAB" cohort open --count 3 --agent Tester --task "demo wave" --cohort C-T > "$CO/.open.log" 2>&1
 n=$(grep -c 'cohort C-T slot' "$OFFICE/agents/roster.md")
 [ "$n" -eq 3 ] && ok "cohort: 3 reserved roster rows appended" || bad "cohort: expected 3 reserved rows, got $n"
-grep -q 'S001' "$OFFICE/agents/roster.md" && grep -q 'S003' "$OFFICE/agents/roster.md" && ok "cohort: codenames contiguous from a clean board (S001..S003)" || bad "cohort: wrong codename block"
+grep -q 'OF01SS01' "$OFFICE/agents/roster.md" && grep -q 'OF01SS03' "$OFFICE/agents/roster.md" && ok "cohort: structured codenames contiguous from a clean board (OF01SS01..03)" || bad "cohort: wrong codename block"
 ev=$(ls "$CO/.context_ledger/memory/collaboration/events/"*.json 2>/dev/null | head -1)
-{ [ -n "$ev" ] && grep -q '"type": "cohort"' "$ev" && grep -q '"participants": \["S001", "S002", "S003"\]' "$ev"; } && ok "cohort: one cohort event records the member list" || bad "cohort: event missing or wrong"
+{ [ -n "$ev" ] && grep -q '"type": "cohort"' "$ev" && grep -q '"participants": \["OF01SS01", "OF01SS02", "OF01SS03"\]' "$ev"; } && ok "cohort: one cohort event records the member list" || bad "cohort: event missing or wrong"
 
 # list + status read it back
 sh "$COLLAB" cohort list 2>&1 | grep -q 'C-T' && ok "cohort: list shows the cohort" || bad "cohort: list missed it"
-sh "$COLLAB" cohort status --cohort C-T 2>&1 | grep -q 'S002.*\[Reserved\]' && ok "cohort: status shows members Reserved" || bad "cohort: status wrong"
+sh "$COLLAB" cohort status --cohort C-T 2>&1 | grep -q 'OF01SS02.*\[Reserved\]' && ok "cohort: status shows members Reserved" || bad "cohort: status wrong"
 
 # the trail validator and the registry check both tolerate it
 sh "$COLLAB" check >/dev/null 2>&1 && ok "cohort: ledger-collab check tolerates a cohort event" || bad "cohort: collab check rejected the cohort event"
@@ -1183,7 +1183,17 @@ sh "$MEM" check >/dev/null 2>&1 && ok "cohort: reserved rows pass ledger-mem che
 
 # a second open continues after the reserved block (reads the new rows)
 sh "$COLLAB" cohort open --count 1 --cohort C-U >/dev/null 2>&1
-grep -q 'S004' "$OFFICE/agents/roster.md" && ok "cohort: a second open continues the numbering (S004)" || bad "cohort: second open did not continue numbering"
+grep -q 'OF01SS04' "$OFFICE/agents/roster.md" && ok "cohort: a second open continues the numbering (OF01SS04)" || bad "cohort: second open did not continue numbering"
+
+# backward-compat: a legacy S<NNN> row still counts for the next session number
+printf '| Linus | S009 | m | legacy office-local codename | Done | x |\n' >> "$OFFICE/agents/roster.md"
+sh "$COLLAB" cohort open --count 1 --cohort C-V >/dev/null 2>&1
+grep -q 'OF01SS10' "$OFFICE/agents/roster.md" && ok "cohort: legacy S<NNN> row is read for the next session number (-> OF01SS10)" || bad "cohort: legacy codename not counted"
+
+# office number comes from frozen offices in history/ (office 1 here, office 3 with two frozen)
+mkdir -p "$OFFICE/../../history"; : > "$OFFICE/../../history/office-001.md"; : > "$OFFICE/../../history/office-002.md"
+sh "$COLLAB" cohort open --count 1 --cohort C-W >/dev/null 2>&1
+grep -q 'OF03SS' "$OFFICE/agents/roster.md" && ok "cohort: office number tracks frozen offices (OF03 after two closes)" || bad "cohort: office number wrong"
 
 # bad input
 sh "$COLLAB" cohort open --agent X >"$CO/.bad.log" 2>&1 && bad "cohort: open without --count should fail" || ok "cohort: open without --count is rejected"

@@ -113,7 +113,7 @@ roster_block() {
       if (n < 4) next
       name = c[2]; code = c[3]
       gsub(/^[[:space:]]+|[[:space:]]+$/, "", name); gsub(/^[[:space:]]+|[[:space:]]+$/, "", code)
-      if (code !~ /^[Ss][0-9]+$/) next
+      if (code !~ /^([Ss][0-9]+|OF[0-9]+SS[0-9]+)$/) next
       doing = (n >= 5) ? c[5] : ""; gsub(/^[[:space:]]+|[[:space:]]+$/, "", doing)
       status = (n >= 6) ? c[6] : ""; gsub(/^[[:space:]]+|[[:space:]]+$/, "", status)
       printf "%s|%s|%s|%s\n", name, code, status, doing
