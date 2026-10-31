@@ -556,6 +556,49 @@ session/issue and coordinate before editing. In collaboration mode
 `tasks/current.md` is not a lock and must not be used to
 block a peer; use the collaboration event trail instead.
 
+### Sibling cohorts — a wave spawned together
+
+Peer collaboration above assumes agents arrive **one at a time**: each
+scans the board, picks the next free codename, and first-push-wins settles
+a rare collision. A **sibling cohort** breaks that assumption on purpose —
+one parent fans a multi-item task into N sessions at once, each a clone in
+its own worktree, to be archived together at the end. N siblings scanning
+the same board simultaneously don't collide *rarely*; they collide *every
+time* (the S016/S017 flaw, N-fold), and their exit checklists all append to
+the same logs, so the branches conflict on merge every time too. The ledger
+models the cohort as a first-class thing so neither is left to improvise:
+
+- **Pre-allocated codenames.** The parent runs
+  `ledger-collab cohort open --count N [--agent NAME] [--task TEXT]` **once**,
+  before spawning anyone. It reads the board a single time and reserves a
+  contiguous block of codenames — writing one `Reserved` roster row per
+  member (so a concurrent non-cohort check-in sees the block as taken) and
+  one immutable `cohort` event recording the member list and attribution.
+  The parent commits both ledger surfaces, pushes, **then** spawns the
+  siblings, handing each ONE codename in its brief. A sibling does **not**
+  scan for a free number at check-in: it **claims its reserved row in place**
+  (sets its name + Status `Working`). The race is gone because there is only
+  one allocating write, by the parent. `cohort list` and
+  `cohort status [--cohort ID]` show the wave and whether each member has
+  claimed, is still reserved, or has clocked out.
+- **The bookkeeping-merge step is defined, not improvised.** The append-only
+  logs (`agents/sessions.md`, `flaws/log.md`, `inefficiencies/log.md`,
+  `plans/decisions.md`) carry `merge=union` in `.gitattributes`, so sibling
+  branches that each appended their own entries merge **clean** — git keeps
+  both sides and drops the markers. `STATE.md` is a derived view and is
+  **never** union-merged; after merging a cohort's branches run
+  `ledger-state reconcile` to regenerate it from the now-merged sources and
+  to flag any file that still carries conflict markers (an edit-in-place file
+  like `roster.md`, where you keep every still-live row). That is the whole
+  recipe: union the logs (automatic), regenerate the view (`reconcile`).
+
+A cohort is attribution, not authentication: the `cohort` event says these
+codenames were dispatched together by one parent, but like the
+`Ledger-Session` trailer it is only as honest as the agent that writes it.
+Everything else in Peer collaboration still applies within a cohort —
+isolated worktrees, notes/claims for genuinely overlapping scope, and
+`ledger-collab check` before integration.
+
 ---
 
 ## Fact scoping — the contamination rules
