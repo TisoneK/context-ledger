@@ -179,3 +179,44 @@ per-writer files), and possibly the roster into a generated view — a MINOR,
 maybe a MAJOR if the roster layout changes. Deferred to a supervisor ruling
 (§7); 2.3.0's union path stands in the meantime and is what the live `rewind`
 cohort exercises.
+
+## 10. The data-model question — files vs modules/packages (supervisor, 2026-10-31)
+
+Pushing §9 to its root: *why is the durable ledger a handful of flat,
+mutable markdown files at all, instead of discrete composable units —
+modules/packages?* The contention is a **symptom of the data model**. Every
+collision is on a monolithic, mutable artifact (`sessions.md`, `roster.md`,
+the logs) that many writers touch. The lone exception — collaboration
+**events**, one immutable file per event under `events/` — is the one that
+never collides and needs no merge. That is the whole answer in miniature:
+**records as discrete units beat a shared file**, and the ledger already
+proves it where it bothered to.
+
+The end-state this implies:
+
+- **Each record is its own unit** (module-like): `office/sessions/<codename>.md`
+  (one per session), one file per flaw / decision, a per-session worklog —
+  grouped in directories (package-like). One writer per unit → zero
+  contention, in either collaboration mode, with no union and no reconcile.
+- **The human-readable views are generated, not hand-maintained**: the roster
+  board, `STATE.md`, and a top-to-bottom session narrative are *composed*
+  over the unit files (like importing a package's modules into one
+  namespace), the way `ledger-state generate` already composes `STATE.md`.
+
+Why it is flat files today — honestly, a trade, not an accident: plain
+markdown is human-readable, `git diff`-able, greppable, zero-dependency, and
+legible to any agent or model with no tooling or DB. That legibility is the
+protocol's whole premise. The cost is the write-contention, and 2.3.0's
+union-merge + `reconcile` is a **patch over that cost**, not a cure. The cure
+keeps the legibility (the generated views are still plain markdown) while
+removing the shared-mutable-file entirely.
+
+The tension to weigh when this is ruled on: a single append-only
+`sessions.md` is one narrative you read top-to-bottom; exploding it into N
+unit files needs a generator to reconstitute that read, and means more git
+objects and path bookkeeping. So the likely split is **unit files for
+per-writer/per-record state, a generated index for the narrative and the
+board** — not a dogmatic "everything becomes a file." This is the MAJOR-scope
+sibling of §9 and supersedes nothing in 2.3.0; it reframes §9's per-writer
+files as the first step of a full move to a record-per-unit data model.
+Deferred to a supervisor ruling.
