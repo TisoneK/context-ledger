@@ -547,6 +547,13 @@ switch ($Command) {
     Invoke-Closeout -Confirm:($RestArgs -contains '--confirm')
     exit 0
   }
+  # audit's flaw-log scan is implemented once, in the sh edition (a single awk
+  # pass): with sh on PATH (Git for Windows ships it) delegate; without it, skip
+  # cleanly so a Windows close-out is never blocked on this surfacing step.
+  'audit' {
+    if (Get-Command sh -ErrorAction SilentlyContinue) { & sh (Join-Path $scriptDir 'ledger-mem') audit @RestArgs; exit $LASTEXITCODE }
+    else { if (-not ($RestArgs -contains '--brief')) { Say 'audit: needs sh on PATH for the flaw-log scan -- skipped' }; exit 0 }
+  }
   { $_ -in @('', '-h', '--help', 'help') } { Usage }
   default { Die "unknown command '$Command' (try: ledger-mem.ps1 help)" }
 }

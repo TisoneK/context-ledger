@@ -10,6 +10,47 @@ bump MINOR; wording and fixes bump PATCH.
 
 ---
 
+## 2.3.3 — 2026-10-31
+
+**Fix: close the loop so the ledger enforces and notices, instead of the
+human.** Two related gaps, batched (PATCH — hardening existing behavior, not
+a spec change). Both grew out of the same session: the supervisor kept being
+the one to catch the recurring flaw, which is the loop broken.
+
+Exit enforcement (continues 2.3.2's resume-proof reminder):
+
+- `ledger-guard exit-check` — new; `ledger-gates run exit` runs it. It
+  resolves the acting session and asserts the close-out: a session entry is
+  logged for your codename, `tasks/current.md` is no longer in-progress, and
+  your roster row is not left `Working`. `Done`, `Blocked` and a removed row
+  all pass — a parked Done row and a blocked hand-off are legitimate endings,
+  not the flaw. Fails the exit gate when the close-out is incomplete; skips
+  cleanly when it cannot tell who is leaving (several live, or none).
+- `ledger-guard push-check` now warns (never blocks) when you push with your
+  own roster row still `Working` — the pre-push backstop for a forgotten
+  close-out. Runs automatically via the pre-push hook and CI.
+
+Self-correction (the flaw log stops being write-only):
+
+- `ledger-mem audit [--brief]` — new. Surfaces the OPEN flaws and the themes
+  that recur across 3+ open entries (heuristic: a salient term shared across
+  entries), so the system raises "this keeps happening" itself. The per-turn
+  `remind` hook shows `audit --brief`, putting the live traps in front of
+  every agent every turn.
+- Binding Rule 15 ("Notice the system's own faults"): hunt for friction
+  yourself, read the surfaced flaws before repeating one, and promote a
+  recurring trap to a rule/gate/tool-check rather than logging it a fourth
+  time — enforcement beats memory.
+
+Terminology (Rule 14): the protocol floor, kickoff, rule 14 and `ledger-guard`
+now treat "close out / clock out / check out / end the session / wrap up" as
+one action and tell agents to map the supervisor's varied words to the
+protocol step instead of fixating on a fixed phrase.
+
+- sh is the single implementation for `exit-check` and `audit`; the `.ps1`
+  editions delegate to it and skip cleanly without `sh`. Suite 114 → 120.
+- PATCH, backward-compatible, no spec or layout change.
+
 ## 2.3.2 — 2026-10-31
 
 **Fix: the ledger reminds you to clock out, instead of trusting you to

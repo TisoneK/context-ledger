@@ -275,7 +275,7 @@ sh .context_ledger/core/bin/ledger-gates run exit
 next lifecycle transition; record the exact failing command and output in
 the session notes or event trail. Registry missing? `ledger-gates init`.
 
-### Phase 6 — Exit
+### Phase 6 — Exit (a.k.a. close out / clock out / check out / end the session — the supervisor's word for it does not change the steps)
 
 Not done until:
 
@@ -294,6 +294,14 @@ Not done until:
    isn't over until the user says so; if more work arrives after
    clock-out, check back in first (same name and codename) and extend
    your existing `sessions.md` entry, never open a second one.
+
+Run `ledger-gates run exit` as the last check before the closing commit,
+while your heartbeat is still live so it can tell it is you leaving: its
+`exit-check` asserts items 2, 3 and 6 (session logged, `current.md` not
+in-progress, your roster row not left Working) and fails the gate if the
+close-out is incomplete. Release the heartbeat after the commit. And
+`push-check` (pre-push + CI) warns when you push with your row still
+Working — a backstop, not a substitute for running the gate.
 
 If the user has to remind you to commit or push, that is a protocol
 failure — log it in `memory/office/flaws/log.md`.
