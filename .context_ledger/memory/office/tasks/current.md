@@ -12,6 +12,6 @@ entry and backlog before starting.
 - **Status:** in-progress | done | blocked (<blocker>)
 -->
 
-- **Session:** 2026-10-27 — Amani / GLM (Z.ai) (S020) — part 3
-- **Task:** core 2.2.1 built and self-hosted — sandbox reset recovery + continuation guidance (durability law, five-step runbook, secrets hardening) per the supervisor's "go ahead" on all four playbook decisions
+- **Session:** (idle)
+- **Task:** none in progress — S021 (Soren) clocked out 2026-10-31 after shipping core 2.2.2/2.3.0/2.3.1 and the live rewind cohort
 - **Status:** done
