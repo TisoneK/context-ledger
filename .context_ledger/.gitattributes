@@ -25,3 +25,14 @@ memory/**            text eol=lf
 *.json text eol=lf
 *.conf text eol=lf
 *.lock text eol=lf
+
+# --- Append-only ledger logs: union-merge on conflict --------------------
+# Append-only, so concurrent sessions / sibling cohorts always conflict on
+# them at merge; git's union driver keeps both sides' appended entries and
+# drops the markers. Regenerate the derived digest afterward with
+# `ledger-state reconcile` (STATE.md is never union-merged). Paths relative
+# to this .context_ledger/ directory.
+memory/office/agents/sessions.md     merge=union
+memory/office/flaws/log.md           merge=union
+memory/office/inefficiencies/log.md  merge=union
+memory/office/plans/decisions.md     merge=union
