@@ -23,6 +23,18 @@ core/bin/*         text eol=lf
 *.conf             text eol=lf
 *.lock             text eol=lf
 
+# --- Append-only ledger logs: union-merge on conflict --------------------
+# This package dogfoods its own protocol under .context_ledger/. These logs
+# are append-only, so concurrent sessions and sibling cohorts always conflict
+# on them at merge; git's union driver keeps both sides' appended entries and
+# drops the markers. Regenerate STATE.md afterward with `ledger-state
+# reconcile` (STATE.md is derived and never union-merged). Mirrors
+# core/templates/.gitattributes, which ships the same rules to every project.
+.context_ledger/memory/office/agents/sessions.md     merge=union
+.context_ledger/memory/office/flaws/log.md           merge=union
+.context_ledger/memory/office/inefficiencies/log.md  merge=union
+.context_ledger/memory/office/plans/decisions.md     merge=union
+
 # Binary assets must never be normalized.
 *.png  binary
 *.jpg  binary

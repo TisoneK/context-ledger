@@ -10,6 +10,59 @@ bump MINOR; wording and fixes bump PATCH.
 
 ---
 
+## 2.3.0 — 2026-10-30
+
+**Sibling cohorts: a wave of agents, spawned together, modeled as one.**
+The protocol assumed agents arrive one at a time — scan the board, pick the
+next free codename, first-push-wins settles the rare collision. The
+sibling-agent pattern (one parent fans a multi-item task into N sessions at
+once, each a clone in its own worktree, archived together) breaks that
+assumption deterministically: N siblings scanning the same board collide on
+a codename *every* time (the S016/S017 flaw, N-fold), and their exit
+checklists conflict on the shared logs *every* time. This release makes the
+cohort a first-class thing instead of something each wave improvises around.
+Rationale: `designs/sibling-cohorts-and-input-comprehension.md` §2.
+
+- **Pre-allocated codenames — `ledger-collab cohort`.** New subcommands
+  `open` / `list` / `status`. The parent runs
+  `cohort open --count N [--agent NAME] [--task TEXT]` **once**, before
+  spawning anyone: it reads the board a single time and reserves a
+  contiguous block, writing one `Reserved` roster row per member (visible to
+  any concurrent check-in) plus one immutable `cohort` collaboration event
+  (attribution + the member list), and prints a ready-made spawn brief per
+  member. A sibling then **claims its reserved row in place** at check-in
+  instead of scanning — one allocating write by the parent, so the race is
+  gone. `cohort status` cross-references the roster to show who has claimed,
+  is still reserved, or clocked out.
+- **The bookkeeping-merge step is defined, not improvised — `merge=union` +
+  `ledger-state reconcile`.** The append-only logs (`agents/sessions.md`,
+  `flaws/log.md`, `inefficiencies/log.md`, `plans/decisions.md`) now carry
+  `merge=union` in both the shipped `.gitattributes`
+  (`core/templates/.gitattributes`) and this package's own, so sibling
+  branches that each appended their entries merge **clean** — git keeps both
+  sides, no markers (proven against a control merge). `STATE.md` is a
+  derived view and is never union-merged; new `ledger-state reconcile`
+  regenerates it from the now-merged sources after a cohort merge and flags
+  any file still carrying conflict markers. The whole recipe, which this
+  session had resolved by hand three times across the LocalMind siblings, is
+  now: union the logs (automatic), run `reconcile`.
+- **`cohort` collaboration-event type.** Added to the schema
+  (`collab-event.schema.json`: type enum + a `participants`-required rule)
+  and tolerated by `ledger-collab check` like a note (no refs, no
+  obligations, never gates integration).
+- **Docs:** new "Sibling cohorts" section in `ledger-schema.md`, a cohort
+  note in the kickoff check-in phase, and cohort usage in the collaboration
+  README template.
+- Windows: the `.ps1` ports of both tools carry the full cohort/reconcile
+  logic but are **unrun on this host** (no pwsh on the release machine) —
+  same open Windows-pass caveat as the existing backlog row.
+- MINOR: new tooling + a new schema type; no spec or memory-layout break.
+  Existing projects pick up the union rules by re-copying
+  `core/templates/.gitattributes` into `.context_ledger/.gitattributes`
+  (noted for the migrate path).
+
+---
+
 ## 2.2.2 — 2026-10-30
 
 **Input-comprehension floor: read the whole message, enumerate, don't latch.**

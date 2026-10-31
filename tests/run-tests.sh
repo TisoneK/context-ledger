@@ -1152,6 +1152,69 @@ LEDGER_GUARD_SKIP=1 git -C "$GS" push -q origin HEAD:refs/heads/main >/dev/null 
 [ "$rc" -eq 0 ] && ok "guard2: LEDGER_GUARD_SKIP=1 lets one push through (logged)" || bad "guard2: skip hatch failed on push (rc=$rc)"
 rm -rf "$GS" "$GS.remote"
 
+# ---- ledger-collab cohort + ledger-state reconcile (core 2.3.0) -------------
+say ""
+say "== sibling cohorts: pre-allocated codenames + the bookkeeping-merge step =="
+CO=$SH_SCRATCH.cohort
+make_scratch "$CO"
+COLLAB=$CO/.context_ledger/core/bin/ledger-collab
+STATE=$CO/.context_ledger/core/bin/ledger-state
+MEM=$CO/.context_ledger/core/bin/ledger-mem
+OFFICE=$CO/.context_ledger/memory/office
+mkdir -p "$OFFICE/agents" "$OFFICE/flaws" "$CO/.context_ledger/memory/collaboration/events"
+printf '| Name | Codename | Model | Doing | Status | Status detail |\n|---|---|---|---|---|---|\n' > "$OFFICE/agents/roster.md"
+: > "$OFFICE/agents/sessions.md"
+
+# open reserves a contiguous block from an empty board -> S001..S003
+sh "$COLLAB" cohort open --count 3 --agent Tester --task "demo wave" --cohort C-T > "$CO/.open.log" 2>&1
+n=$(grep -c 'cohort C-T slot' "$OFFICE/agents/roster.md")
+[ "$n" -eq 3 ] && ok "cohort: 3 reserved roster rows appended" || bad "cohort: expected 3 reserved rows, got $n"
+grep -q 'S001' "$OFFICE/agents/roster.md" && grep -q 'S003' "$OFFICE/agents/roster.md" && ok "cohort: codenames contiguous from a clean board (S001..S003)" || bad "cohort: wrong codename block"
+ev=$(ls "$CO/.context_ledger/memory/collaboration/events/"*.json 2>/dev/null | head -1)
+{ [ -n "$ev" ] && grep -q '"type": "cohort"' "$ev" && grep -q '"participants": \["S001", "S002", "S003"\]' "$ev"; } && ok "cohort: one cohort event records the member list" || bad "cohort: event missing or wrong"
+
+# list + status read it back
+sh "$COLLAB" cohort list 2>&1 | grep -q 'C-T' && ok "cohort: list shows the cohort" || bad "cohort: list missed it"
+sh "$COLLAB" cohort status --cohort C-T 2>&1 | grep -q 'S002.*\[Reserved\]' && ok "cohort: status shows members Reserved" || bad "cohort: status wrong"
+
+# the trail validator and the registry check both tolerate it
+sh "$COLLAB" check >/dev/null 2>&1 && ok "cohort: ledger-collab check tolerates a cohort event" || bad "cohort: collab check rejected the cohort event"
+sh "$MEM" check >/dev/null 2>&1 && ok "cohort: reserved rows pass ledger-mem check (no dup-name/empty-status)" || bad "cohort: reserved rows tripped ledger-mem check"
+
+# a second open continues after the reserved block (reads the new rows)
+sh "$COLLAB" cohort open --count 1 --cohort C-U >/dev/null 2>&1
+grep -q 'S004' "$OFFICE/agents/roster.md" && ok "cohort: a second open continues the numbering (S004)" || bad "cohort: second open did not continue numbering"
+
+# bad input
+sh "$COLLAB" cohort open --agent X >"$CO/.bad.log" 2>&1 && bad "cohort: open without --count should fail" || ok "cohort: open without --count is rejected"
+
+# reconcile: clean regenerates STATE and exits 0; a leftover marker is flagged
+sh "$STATE" reconcile >/dev/null 2>&1 && ok "reconcile: clean tree regenerates STATE and exits 0" || bad "reconcile: clean run did not exit 0"
+[ -f "$OFFICE/STATE.md" ] && ok "reconcile: STATE.md written" || bad "reconcile: no STATE.md"
+printf '<<<<<<< HEAD\na\n=======\nb\n>>>>>>> x\n' >> "$OFFICE/agents/sessions.md"
+sh "$STATE" reconcile >"$CO/.rec.log" 2>&1; rc=$?
+{ [ "$rc" -eq 2 ] && grep -q 'conflict markers REMAIN' "$CO/.rec.log"; } && ok "reconcile: a lingering conflict marker is flagged (rc=2)" || bad "reconcile: did not flag leftover marker (rc=$rc)"
+
+# the .gitattributes union rule actually auto-resolves an append-only-log merge
+U=$SH_SCRATCH.union
+rm -rf "$U"; mkdir -p "$U/memory/office/agents"
+git -C "$U" -c init.defaultBranch=main init -q
+printf 'memory/office/agents/sessions.md merge=union\n' > "$U/.gitattributes"
+printf '# Sessions\n\n## Session 1\n- base\n' > "$U/memory/office/agents/sessions.md"
+git -C "$U" -c user.name=t -c user.email=t@t add -A
+git -C "$U" -c user.name=t -c user.email=t@t commit -qm base
+git -C "$U" -c user.name=t -c user.email=t@t checkout -q -b sibA
+printf '\n## Session 2\n- A\n' >> "$U/memory/office/agents/sessions.md"
+git -C "$U" -c user.name=t -c user.email=t@t commit -qam A
+git -C "$U" -c user.name=t -c user.email=t@t checkout -q main
+git -C "$U" -c user.name=t -c user.email=t@t checkout -q -b sibB
+printf '\n## Session 3\n- B\n' >> "$U/memory/office/agents/sessions.md"
+git -C "$U" -c user.name=t -c user.email=t@t commit -qam B
+if git -C "$U" -c user.name=t -c user.email=t@t merge --no-edit sibA >/dev/null 2>&1; then
+  if grep -q '<<<<<<<' "$U/memory/office/agents/sessions.md"; then bad "union: merged but markers remain"; else ok "union: sibling branches both appending to a log merge clean (merge=union)"; fi
+else bad "union: merge conflicted despite merge=union"; fi
+rm -rf "$U" "$CO" "$CO.remote" 2>/dev/null || true
+
 rm -rf "$SH_SCRATCH" "${PS_SCRATCH:-}" 2>/dev/null || true
 
 say ""
