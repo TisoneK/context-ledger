@@ -123,7 +123,59 @@ which is the §3 pattern again. Not a new mechanism; an enforcement hook.
   justify signed commits + structured codename (§5), or does the
   single-owner assumption hold a while longer?
 - **Lifecycle.** OK to run `prune --apply` at exit automatically (§6)?
+- **Per-writer files (§9, raised 2026-10-31).** Split the *per-agent*
+  bookkeeping into per-writer files so a cohort can share one branch/tree
+  with no contention — or keep the shared-file + union-merge model built in
+  2.3.0, which suits the isolated-worktree mode?
 
 ## 8. Supervisor ruling
 
 _(to be filled when the supervisor rules.)_
+
+## 9. Follow-up — per-writer files vs shared-then-merge (supervisor, 2026-10-31)
+
+Raised while the 2.3.0 cohort was shipping: *can't the siblings just not
+share a contended file — e.g. `workflows/active.<agent>.md`, one file per
+writer?* Yes, and it is the **stronger** form of the bookkeeping fix for the
+state that is genuinely per-agent. It is the same principle the collaboration
+events already use: one immutable file per writer under `events/`, so there
+is simply **nothing to merge**. The two modes, made explicit:
+
+- **Isolated worktree/branch per sibling** (what 2.3.0's `merge=union` +
+  `ledger-state reconcile` serve). Branches only meet at merge; the
+  append-only logs union there and STATE is regenerated. Safe against the
+  stash/rebase-clobber hazard of a shared tree, at the cost of N worktrees.
+- **Shared branch/tree** (what the supervisor is pointing at). Here per-writer
+  files earn their place: each sibling writes only `tasks/current.<codename>.md`
+  (and a per-session worklog of its own), never a file a peer also writes, so
+  concurrent agents coexist in ONE checkout with **zero** ledger contention —
+  no worktree needed for the bookkeeping's sake. A generated view aggregates
+  the per-writer files (the way `STATE.md` already aggregates).
+
+The split that falls out:
+
+- **Per-agent state → per-writer files.** `tasks/current.md` (already a
+  single-agent lock) becomes `tasks/current.<codename>.md`; a per-session
+  worklog is already per-writer. No merge, either mode.
+- **One shared chronological artifact → keep singular, union-append.**
+  `agents/sessions.md` is one duty log in time order; union is exactly right.
+- **The board → one view, ideally generated.** `roster.md` is *meant* to be a
+  single at-a-glance table; splitting it defeats its purpose. The clean end
+  state is per-agent status files with the board regenerated over them (like
+  STATE), so even roster edits stop colliding.
+
+Caveat that keeps worktrees honest: per-writer files fix the **ledger**
+contention, not the **product** one. In a shared tree, two agents' product
+edits and one agent's `git stash`/`rebase` can still swallow another's
+uncommitted work (the S421 collision in LocalMind memory). So shared-tree
+cohorts are safe only when product work is also cleanly partitioned
+(disjoint files per sibling — which is exactly how this session's `rewind`
+demo is carved: one module + one test per sibling). Worktree isolation stays
+the default; per-writer files make shared-tree an option, not an obligation.
+
+This is the next iteration after 2.3.0, not a patch to it: it changes file
+layout (`tasks/current.md` → per-codename), `ledger-state` (aggregate the
+per-writer files), and possibly the roster into a generated view — a MINOR,
+maybe a MAJOR if the roster layout changes. Deferred to a supervisor ruling
+(§7); 2.3.0's union path stands in the meantime and is what the live `rewind`
+cohort exercises.
