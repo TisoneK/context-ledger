@@ -14,3 +14,6 @@ https://github.com/TisoneK/scrapamoja.git  bootstrapped=2026-07-14  core=0.2.0  
 https://github.com/TisoneK/glyph.git  bootstrapped=2026-07-29  core=0.3.0
 https://github.com/TisoneK/proxigrid.git  bootstrapped=2026-08-26  core=0.8.0
 https://github.com/TisoneK/context-ledger.git  bootstrapped=2026-09-10  core=0.22.0
+https://github.com/TisoneK/bobly-tide.git  bootstrapped=2026-10-24  core=2.2.0
+https://github.com/TisoneK/zett.git  bootstrapped=2026-11-20  core=2.3.3
+https://github.com/TisoneK/gvi-agents.git  bootstrapped=2026-11-26  core=2.3.3
