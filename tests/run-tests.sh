@@ -253,6 +253,63 @@ EOF
     bad "mem ps1: empty Status cell not warned or check failed"
   fi
 fi
+
+# ---- ledger-mem: codename format enforcement (core 2.4.0) --------------------
+# A live roster codename must be a valid form -- S<NNN> (solo) or OF<NN>SS<NN>
+# (cohort, reserved by ledger-collab cohort). A malformed one (single-S
+# OF01S01, lowercase) FAILS the check so a drifted identity cannot land; a
+# valid-but-unpadded S5 only warns.
+cat > "$ROSTER" <<'EOF'
+| Name | Codename | Model | Doing | Status | Status detail |
+|------|----------|-------|-------|--------|---------------|
+| Ada | S001 | m | solo | Working | stage |
+| Ivy | OF01SS02 | m | cohort | Working | stage |
+EOF
+if sh "$MEM_SH" check >/dev/null 2>&1; then
+  ok "mem: canonical S<NNN> and cohort OF<NN>SS<NN> both pass check"
+else
+  bad "mem: a valid codename form was rejected"
+fi
+
+cat > "$ROSTER" <<'EOF'
+| Name | Codename | Model | Doing | Status | Status detail |
+|------|----------|-------|-------|--------|---------------|
+| Ada | OF01S01 | m | drift | Working | stage |
+EOF
+if sh "$MEM_SH" check > "$MEM_SCRATCH/.mem-out.log" 2>&1; then
+  bad "mem: malformed codename OF01S01 did not fail the check"
+else
+  grep -q "not a valid form" "$MEM_SCRATCH/.mem-out.log" \
+    && ok "mem: malformed codename OF01S01 fails the check (teeth)" \
+    || bad "mem: codename failed but without the expected message"
+fi
+
+cat > "$ROSTER" <<'EOF'
+| Name | Codename | Model | Doing | Status | Status detail |
+|------|----------|-------|-------|--------|---------------|
+| Ada | S5 | m | unpadded | Working | stage |
+EOF
+if sh "$MEM_SH" check > "$MEM_SCRATCH/.mem-out.log" 2>&1 \
+   && grep -q "not zero-padded" "$MEM_SCRATCH/.mem-out.log"; then
+  ok "mem: valid-but-unpadded S5 warns without failing"
+else
+  bad "mem: unpadded S5 failed the check or did not warn"
+fi
+
+if [ -n "$PS_BIN" ]; then
+  cat > "$ROSTER" <<'EOF'
+| Name | Codename | Model | Doing | Status | Status detail |
+|------|----------|-------|-------|--------|---------------|
+| Ada | OF01S01 | m | drift | Working | stage |
+EOF
+  if "$PS_BIN" -NoProfile -ExecutionPolicy Bypass -File "$MEM_PS_W" check > "$MEM_SCRATCH/.mem-out.log" 2>&1; then
+    bad "mem ps1: malformed codename OF01S01 did not fail"
+  else
+    grep -q "not a valid form" "$MEM_SCRATCH/.mem-out.log" \
+      && ok "mem ps1: malformed codename fails the check (parity)" \
+      || bad "mem ps1: failed without the expected message"
+  fi
+fi
 rm -rf "$MEM_SCRATCH"
 
 # ---- ledger-mem: capped backlog queue (core 1.2.0) ---------------------------
@@ -497,6 +554,53 @@ if [ -n "$PS_BIN" ]; then
     cat "$PRUNE_SCRATCH/.prune-ps.log"
   fi
 fi
+
+# ---- ledger-mem prune: widened closed-marker vocabulary (core 2.4.0) --------
+# The closed-marker match is case-insensitive and covers resolved / closed /
+# retired / fixed / no longer (not just uppercase RESOLVED / "fixed in
+# package"), but a partly/still-open/unverified tail keeps an entry active.
+PRUNE2=${TMPDIR:-/tmp}/ledger-test-prune-vocab
+rm -rf "$PRUNE2"
+mkdir -p "$PRUNE2/.context_ledger/core/bin" "$PRUNE2/.context_ledger/memory/office/flaws"
+cp "$CORE/bin/ledger-mem" "$PRUNE2/.context_ledger/core/bin/ledger-mem"
+cat > "$PRUNE2/.context_ledger/memory/office/flaws/log.md" <<'FX'
+# Flaws
+## 2026-01-01 -- open one
+- **Status:** open -- still being worked
+## 2026-01-02 -- lowercase resolved
+- **Status:** resolved in 2.1.0 on the sh edition
+## 2026-01-03 -- partial
+- **Status:** partly fixed in core 2.3.2. Still open: the rest
+## 2026-01-04 -- closed by design
+- **Status:** closed by design -- no package change
+## 2026-01-05 -- fixed sha
+- **Status:** fixed in package abc123
+FX
+sh "$PRUNE2/.context_ledger/core/bin/ledger-mem" prune --list > "$PRUNE2/.log" 2>&1
+if grep -q "3 marked resolved/superseded" "$PRUNE2/.log" \
+   && grep -q "lowercase resolved" "$PRUNE2/.log" \
+   && grep -q "closed by design" "$PRUNE2/.log" \
+   && grep -q "fixed sha" "$PRUNE2/.log" \
+   && ! grep -q "    - ## 2026-01-03 -- partial" "$PRUNE2/.log" \
+   && ! grep -q "    - ## 2026-01-01 -- open one" "$PRUNE2/.log"; then
+  ok "prune: widened vocab catches resolved/closed/fixed; partly+still-open kept active"
+else
+  bad "prune: widened closed-marker vocabulary wrong"
+  cat "$PRUNE2/.log"
+fi
+if [ -n "$PS_BIN" ]; then
+  cp "$CORE/bin/ledger-mem.ps1" "$PRUNE2/.context_ledger/core/bin/ledger-mem.ps1"
+  if command -v cygpath >/dev/null 2>&1; then P2W=$(cygpath -w "$PRUNE2/.context_ledger/core/bin/ledger-mem.ps1"); else P2W=$PRUNE2/.context_ledger/core/bin/ledger-mem.ps1; fi
+  "$PS_BIN" -NoProfile -ExecutionPolicy Bypass -File "$P2W" prune --list > "$PRUNE2/.log-ps" 2>&1
+  if grep -q "3 marked resolved/superseded" "$PRUNE2/.log-ps" \
+     && ! grep -q "    - ## 2026-01-03 -- partial" "$PRUNE2/.log-ps"; then
+    ok "prune ps1: widened vocab + partly guard parity"
+  else
+    bad "prune ps1: widened vocab diverges"
+    cat "$PRUNE2/.log-ps"
+  fi
+fi
+rm -rf "$PRUNE2"
 # ---- ledger-mem prune --apply: mechanical move, roll-up stays manual (core 2.0.0) ----
 # --apply must cut exactly the closed entries (D in inefficiencies, D-1 in
 # decisions) verbatim into archive.md, leave every open entry (A/B/C's
