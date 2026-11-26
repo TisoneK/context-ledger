@@ -10,6 +10,53 @@ bump MINOR; wording and fixes bump PATCH.
 
 ---
 
+## 2.4.0 — 2026-11-26
+
+**Give the floor teeth, prune aggressively, enforce the codename form, write
+for an LLM.** Supervisor directive: the advisory floor does not stick (agents
+follow it turn 1, then drift), the ledger hoards tokens, and codenames are
+written inconsistently. MINOR — new enforcement + behavior, backward-compatible
+(both valid codename forms still pass; legacy rows unaffected).
+
+Codename enforcement (`ledger-mem check`):
+
+- A live roster codename must now be a valid form — `S<NNN>` (solo) or
+  `OF<NN>SS<NN>` (cohort, reserved by `ledger-collab cohort`). A malformed one
+  (single-S `OF01S01`, lowercase `s001`) **fails** the check; a valid but
+  unpadded `S5` warns to zero-pad. Previously any `[Ss][0-9]+|OF…SS…` was
+  silently accepted and anything else silently skipped, so drift never
+  surfaced. The check skips `<!-- -->` template blocks, the header, and the
+  separator row.
+- `ledger-gates run pre-commit` now runs `ledger-mem check`, so a drifted
+  identity (or a duplicate name/codename) **cannot land in a commit**. Warn-only
+  audits (empty Status, stale/ghost rows, log caps) never block.
+
+Aggressive pruning (`ledger-mem prune`, `ledger-gates run exit`):
+
+- The closed-marker vocabulary widened: case-insensitive `resolved` /
+  `superseded` / `closed` / `retired` / `fixed` / `no longer` (was uppercase
+  `RESOLVED` / `[Ss]uperseded` / `fixed in package` only), with a
+  `partly` / `partial` / `still open` / `unverified` tail keeping an entry
+  active. Still scoped to the entry's own `**Status:**` line — prose and
+  template placeholders never match.
+- `ledger-gates run exit` now calls `ledger-mem prune --apply` (was report
+  mode), so closed entries are archived automatically every session, verbatim
+  and reversible in git. The durable logs stop accumulating cold closed
+  entries that bloat the startup read.
+
+Write for an LLM, not a human:
+
+- New schema subsection + a floor bullet: memory entries (sessions, flaws,
+  decisions, roster detail, reports) are terse points, not prose paragraphs —
+  the fewest tokens that stay unambiguous. The only reader is the next agent;
+  prose padding is a token cost paid on every startup read.
+
+Tools touched: `ledger-mem` (+ `.ps1`), `ledger-gates` (+ `.ps1`),
+`templates/guard-reminder.md`, `schemas/ledger-schema.md`. Suite 120 → 124
+(sh). Note: the ps1 ports mirror the sh logic and pass the ASCII/parse guard in
+`verify`, but their runtime was not executed (no PowerShell engine on the
+authoring host) — a Windows verification pass is the follow-up.
+
 ## 2.3.3 — 2026-10-31
 
 **Fix: close the loop so the ledger enforces and notices, instead of the
