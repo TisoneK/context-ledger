@@ -13,12 +13,19 @@ entry and backlog before starting.
 -->
 
 - **Session:** 2026-11-26 — Mateo (S023) / claude-opus-4-8
-- **Task:** Supervisor directive — one theme (agent discipline / self-maintaining ledger) in six points:
-  1. **Protocol-drift / no discipline** — agents follow protocol turn 1, then work from memory and skip it; corrections don't stick after a couple of turns. Root concern: the floor is advisory, not enforced per-turn. → promote to a rule/gate (the ledger's own doctrine).
-  2. **New fleet projects** — bobly-tide, zett, gvi-agents not yet committed to `fleet.md` (found uncommitted in the working tree at check-in). Finish + commit.
-  3. **Flaws across all repos** — audit open flaws for fixing across the fleet repos, not just this package. SCOPE: fleet = 11 repos, only this one is checked out locally → scope with supervisor before cloning all.
-  4. **Retire fixed flaws** — flaws/log.md carries fixed-status entries (2.1.0, 2.3.2, 2.3.3) still in the active log; move them verbatim to flaws/archive.md.
-  5. **Aggressive pruning** — ledger must not hoard data and burn tokens meant for building. Make prune/compaction aggressive (STATE digest size, floor length, append-only log growth).
-  6. **Inconsistent codename convention** — agents use `S001` vs `OF01S01` interchangeably. Spec is ambiguous. Pick ONE canonical form, make it unambiguous, enforce it.
-- **Status:** in-progress — checked in as S023; working points 2,4,5,6 here; 1 is a core/rule change (flag scope); 3 needs supervisor scope decision.
-- **Live example of #1/#6 on the board:** Elias (S019) left `Working`, no task, no Session-19 entry — an abandoned row. Not dropped (peer-row rule); raised to supervisor.
+- **Task:** Supervisor directive on agent discipline (self-enforcing, lean, LLM-terse ledger), 7 points.
+- **Shipped:**
+  1. Discipline teeth — core 2.4.0: `ledger-mem check` + pre-commit gate hard-fail a malformed/duplicate codename.
+  2. Fleet — bobly-tide/zett/gvi-agents registered (a72610f).
+  3. Flaws across repos — `ledger-sync harvest` run: 42 open flaws from 10/10 fleet repos → inbox/harvest-2026-11-26.md (gitignored; re-run is idempotent). TRIAGE PENDING.
+  4. Retire fixed — root consolidated log 64KB→12KB, 30 entries → flaws/archive.md (cb2ef40); office log auto-retires via exit prune going forward.
+  5. Aggressive prune — core 2.4.0: widened closed-marker vocab (case-insensitive, partly/still-open guard) + `ledger-gates run exit` auto-applies prune.
+  6. Codename — core 2.4.0: valid forms S<NNN> (solo) / OF<NN>SS<NN> (cohort); OF01S01/lowercase fail. Enforced in check + pre-commit.
+  7. LLM-terse memory — core 2.4.0: rule in floor + schema ("Write for an LLM, not a human").
+- **Release:** core 2.4.0 released (d1e4cb5) + self-hosted (416e263); suite 120→124 sh green.
+- **Status:** in-progress — directive built; follow-ups open below.
+- **Follow-ups (for supervisor):**
+  - Triage the 42 harvested fleet flaws into core fixes (large; prioritize).
+  - ps1 runtime unverified (no PowerShell on host) — Windows verification pass.
+  - Codename direction: S<NNN> vs OF<NN>SS<NN> — tooling accepts both; whether to deprecate S<NNN> + migrate all entry docs is a protocol-direction call.
+  - Elias (S019): abandoned Working row, no Session-19 entry — clear at a clean moment (next-session self-heal).
