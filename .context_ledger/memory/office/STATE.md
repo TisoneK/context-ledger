@@ -5,10 +5,10 @@ at check-in and at exit. This is a DERIVED VIEW for fast orientation;
 open the file a line points at when your task needs more than the
 line gives you. Full reading order: ledger-schema.md. -->
 
-_Regenerated: 2026-10-31T13:31:55Z_
+_Regenerated: 2026-11-26T19:04:44Z_
 
 ## Standing params
-- **Core:** 2.3.3 (locked, verified 2026-10-31)
+- **Core:** 2.4.0 (locked, verified 2026-11-26)
 - **Target:** general sweep unless the user's chat message names a task
 - **Scope:** discovery + review + fix all safe issues
 - **Push policy:** push to main directly after each commit
@@ -24,7 +24,7 @@ _Regenerated: 2026-10-31T13:31:55Z_
 - **Soren** (S021) — Done — Re-check-in (same session extended): supervisor said "build the hardening" — the two ex…
 
 ## Current task
-- **(idle)** — none in progress — S021 (Soren) closed out 2026-10-31 after shipping core 2.3.3 (exit-check gate + push-check warning + self-correcting `… — *done*
+- **(idle)** — none in progress — S023 (Mateo) closed out 2026-11-26 after shipping core 2.4.0 (enforced codenames + exit auto-prune + LLM-terse rule), … — *done*
 
 ## Backlog — High priority (the top of the queue)
 | B-2026-10-04-1 | Run core 2.2.0's `ledger-guard.ps1` (install of all three hooks + `--ci`; `sessions`/`heartbeat`/`release`/`push-check`/`remind` delegating to sh via Join-Path backslash paths) and the PowerShell halves of `ledger-gates.ps1` (Record-Pass / Clear-Pass / install nudge) on a Windows box (5.1 via `ledger-guard.cmd`, and pwsh 7): `install`, `status`, `remind`, `tool-check` with JSON on stdin (exit 2 on a piped gate), then confirm the git hook (always the sh edition) accepts a commit after the ps1 gate run, i.e. the ps1 marker tree equals the sh `write-tree`. Written with no engine on hand; fix whatever breaks, log it, add the ps1 test half. |
