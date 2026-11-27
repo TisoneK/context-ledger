@@ -12,7 +12,10 @@ entry and backlog before starting.
 - **Status:** in-progress | done | blocked (<blocker>)
 -->
 
-- **Session:** (idle)
-- **Task:** none in progress — S023 (Mateo) closed out 2026-11-26 after shipping core 2.4.0 (enforced codenames + exit auto-prune + LLM-terse rule), fleet +3, root flaws 64KB→12KB, and a fleet harvest (42 open flaws → inbox, triage pending).
-- **Status:** done
-- **Open for next session:** triage the 42 harvested flaws; ps1 Windows verification pass; codename-direction ruling (S<NNN> vs OF<NN>SS<NN>); Elias (S019) stale Working row.
+- **Session:** 2026-11-26 — Mateo (S023, re-opened) / claude-opus-4-8
+- **Task:** stale Working rows accumulate across checkouts; future agents presume them live. Fix structurally (core 2.5.0).
+  - root cause: `ledger-guard stale_rows()` keys off the LOCAL heartbeat file → blind to rows checked in on other checkouts (exactly the ones that go stale). Peer-row rule then freezes them forever.
+  - fix: committed cross-checkout signal = last `Ledger-Session:` trailer date; sanctioned `sweep` command (evidence, not guess); surface in gate; refine peer-row rule.
+  - evidence: Elias S019 last commit 2026-10-20 (37d), no Session-19 entry → definitively abandoned; sweep it.
+- **Status:** in-progress
+- **Open (prior, still parked):** triage 42 harvested flaws; ps1 Windows verification pass; codename-direction ruling; office is 20/20 FULL (ledger-history close due).
