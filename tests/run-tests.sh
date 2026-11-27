@@ -312,6 +312,98 @@ EOF
 fi
 rm -rf "$MEM_SCRATCH"
 
+# ---- ledger-guard: cross-checkout stale-row sweep (core 2.5.0) ---------------
+# A roster row left Working by a session that never clocked out used to linger
+# forever: stale_rows() keyed off the LOCAL heartbeat, blind to a row checked
+# in on another checkout -- exactly the row that goes stale. The fix reads the
+# committed `Ledger-Session:` trailer date (visible from every checkout) and
+# retires a row past the horizon. Dry run by default; the exit gate applies it.
+GUARD_SCRATCH=${TMPDIR:-/tmp}/ledger-test-guard
+rm -rf "$GUARD_SCRATCH"
+mkdir -p "$GUARD_SCRATCH/.context_ledger/core" "$GUARD_SCRATCH/.context_ledger/memory/office/agents" "$GUARD_SCRATCH/.context_ledger/memory/workflows"
+cp -R "$CORE/bin" "$GUARD_SCRATCH/.context_ledger/core/bin"
+GROSTER="$GUARD_SCRATCH/.context_ledger/memory/office/agents/roster.md"
+GSESS="$GUARD_SCRATCH/.context_ledger/memory/office/agents/sessions.md"
+cat > "$GROSTER" <<'EOF'
+| Name | Codename | Model | Doing | Status | Status detail |
+|------|----------|-------|-------|--------|---------------|
+| Elias | S019 | unknown | synced, awaiting brief | Working | Phase 2 reached |
+| Omar | S015 | m | shipped 2.0.3 | Done | Shipped: core 2.0.3 |
+| Nia | S022 | m | active work | Working | mid-task |
+| Mateo | S023 | m | the sweep itself | Working | building 2.5.0 |
+EOF
+printf '# Agent Sessions\n' > "$GSESS"
+git -C "$GUARD_SCRATCH" -c init.defaultBranch=main init -q 2>/dev/null || git -C "$GUARD_SCRATCH" init -q
+git -C "$GUARD_SCRATCH" -c user.name=t -c user.email=t@t commit -q --allow-empty -m init
+# S019 last acted in the ancient past (abandoned); S022 and S023 act "now".
+GIT_COMMITTER_DATE="2000-01-01T00:00:00 +0000" git -C "$GUARD_SCRATCH" -c user.name=t -c user.email=t@t \
+  commit -q --allow-empty -m "elias work
+
+Ledger-Session: S019"
+git -C "$GUARD_SCRATCH" -c user.name=t -c user.email=t@t commit -q --allow-empty -m "nia work
+
+Ledger-Session: S022"
+git -C "$GUARD_SCRATCH" -c user.name=t -c user.email=t@t commit -q --allow-empty -m "mateo work
+
+Ledger-Session: S023"
+GUARD_SH="$GUARD_SCRATCH/.context_ledger/core/bin/ledger-guard"
+
+# detection: S019 (ancient trailer) is flagged; the Done row, the fresh peer,
+# and the acting session's own row are not.
+sr=$(LEDGER_SESSION=S023 LEDGER_ROW_STALE_HOURS=72 sh "$GUARD_SH" stale-rows 2>/dev/null)
+case "$sr" in
+  *S019*) case "$sr" in
+            *S015*|*S022*|*S023*) bad "guard: stale-rows flagged a Done/fresh/self row" ;;
+            *) ok "guard: stale-rows flags only the abandoned cross-checkout row (S019)" ;;
+          esac ;;
+  *) bad "guard: stale-rows did not flag the abandoned row S019"; say "$sr" ;;
+esac
+
+# dry run reports but changes nothing.
+LEDGER_SESSION=S023 LEDGER_ROW_STALE_HOURS=72 sh "$GUARD_SH" sweep > "$GUARD_SCRATCH/.sweep.log" 2>&1
+if grep -q "would sweep" "$GUARD_SCRATCH/.sweep.log" && grep -q "S019" "$GROSTER"; then
+  ok "guard: sweep (dry run) reports S019 but leaves the roster untouched"
+else
+  bad "guard: sweep dry run changed the roster or did not report"
+fi
+
+# --apply removes the row and logs the sweep; the acting session's row stays.
+LEDGER_SESSION=S023 LEDGER_ROW_STALE_HOURS=72 sh "$GUARD_SH" sweep --apply > "$GUARD_SCRATCH/.sweep2.log" 2>&1
+if ! grep -q "S019" "$GROSTER" && grep -q "S023" "$GROSTER" \
+   && grep -q "Stale row swept" "$GSESS" && grep -q "S019" "$GSESS"; then
+  ok "guard: sweep --apply retires S019, logs it, keeps the acting row"
+else
+  bad "guard: sweep --apply did not retire+log S019 correctly"
+fi
+
+# a live peer past no horizon is never swept (fresh trailer within the window).
+if grep -q "S022" "$GROSTER"; then
+  ok "guard: a fresh peer (recent committed activity) is never swept"
+else
+  bad "guard: sweep wrongly removed a live peer's row"
+fi
+
+if [ -n "$PS_BIN" ]; then
+  # ps1 edition delegates stale-rows to the sh edition; assert parity on a
+  # freshly restored S019 row.
+  cat > "$GROSTER" <<'EOF'
+| Name | Codename | Model | Doing | Status | Status detail |
+|------|----------|-------|-------|--------|---------------|
+| Elias | S019 | unknown | synced, awaiting brief | Working | Phase 2 reached |
+EOF
+  if command -v cygpath >/dev/null 2>&1; then
+    GUARD_PS_W=$(cygpath -w "$GUARD_SCRATCH/.context_ledger/core/bin/ledger-guard.ps1")
+  else
+    GUARD_PS_W=$GUARD_SCRATCH/.context_ledger/core/bin/ledger-guard.ps1
+  fi
+  srp=$(LEDGER_SESSION=S023 LEDGER_ROW_STALE_HOURS=72 "$PS_BIN" -NoProfile -ExecutionPolicy Bypass -File "$GUARD_PS_W" stale-rows 2>/dev/null)
+  case "$srp" in
+    *S019*) ok "guard ps1: stale-rows flags the abandoned row (parity via sh)" ;;
+    *) bad "guard ps1: stale-rows did not flag S019"; say "$srp" ;;
+  esac
+fi
+rm -rf "$GUARD_SCRATCH"
+
 # ---- ledger-mem: capped backlog queue (core 1.2.0) ---------------------------
 # The backlog is a work queue, not a knowledge base: actionable rows only,
 # capped at backlog_cap (default 20) — past it, check draws a warn-only
@@ -1262,7 +1354,10 @@ gsc -qm "chore(ledger): Zed (S001) checks in -- probe" >/dev/null 2>&1
 [ "$(trailer_of)" = S001 ] && $GSG sessions | grep -q 'S001  Zed' && ok "guard2: a check-in commit registers the session and carries its trailer" || bad "guard2: check-in did not register (trailer='$(trailer_of)')"
 echo a > "$GS/a.txt"; gsc -qm "feat: a" >/dev/null 2>&1
 [ "$(trailer_of)" = S001 ] && ok "guard2: the sole live session is attributed automatically" || bad "guard2: no automatic attribution"
-gsc -qm "chore(ledger): Yan (S002) checks in -- probe" --allow-empty >/dev/null 2>&1
+# Backdate S002's only trailer commit so its COMMITTED last-seen is ancient too
+# -- staleness now reads the committed trailer (cross-checkout), not just the
+# local heartbeat, so a recent commit would (correctly) keep the row live.
+(export GIT_COMMITTER_DATE="2001-09-09T01:46:40 +0000" GIT_AUTHOR_DATE="2001-09-09T01:46:40 +0000"; gsc -qm "chore(ledger): Yan (S002) checks in -- probe" --allow-empty) >/dev/null 2>&1
 [ "$(trailer_of)" = S002 ] && ok "guard2: a second check-in is attributed to itself, not the first session" || bad "guard2: second check-in mis-attributed ($(trailer_of))"
 echo b > "$GS/b.txt"; gsc -qm "feat: b" >/dev/null 2>&1; rc=$?
 [ "$rc" -ne 0 ] && ok "guard2: with two live sessions an unattributed commit is refused" || bad "guard2: ambiguous commit went through"
@@ -1270,14 +1365,17 @@ echo b > "$GS/b.txt"; gsc -qm "feat: b" >/dev/null 2>&1; rc=$?
 [ "$rc" -eq 0 ] && [ "$(trailer_of)" = S001 ] && ok "guard2: LEDGER_SESSION names the author and disambiguates" || bad "guard2: LEDGER_SESSION not honoured (rc=$rc)"
 (LEDGER_SESSION=bogus; export LEDGER_SESSION; gsc -qm "feat: z" --allow-empty) >/dev/null 2>&1; rc=$?
 [ "$rc" -ne 0 ] && ok "guard2: a malformed LEDGER_SESSION is refused" || bad "guard2: bogus LEDGER_SESSION accepted"
-# stale heartbeat -> reported on the roster, and the session stops counting as live
+# aged heartbeat AND ancient committed trailer -> reported stale on the roster,
+# and the session stops counting as live
 sed -i.bak 's/^at=.*/at=1000000000/' "$GS/.git/ledger-sessions/S002" && rm -f "$GS/.git/ledger-sessions/S002.bak"
 out=$($GSG remind 2>&1)
 case $out in *"STALE? Yan (S002)"*) ok "guard2: remind flags a roster row whose session went quiet" ;; *) bad "guard2: stale row not flagged"; say "$out" ;; esac
 case $out in *"You are: S001"*) ok "guard2: with the other session expired, remind identifies the author" ;; *) bad "guard2: remind identity wrong"; say "$out" ;; esac
 # resume-proof exit reminder: the live author's own Working row is still open, so remind must surface the clock-out it owes
 case $out in *"OPEN SESSION"*) ok "guard2: remind reminds the live author of the clock-out it still owes" ;; *) bad "guard2: no resume-proof exit reminder"; say "$out" ;; esac
-$GSG release S002 >/dev/null 2>&1; $GSG sessions | grep -q 'S002' && bad "guard2: release left the session registered" || ok "guard2: release drops the session"
+# release drops the registry entry (a line beginning with the codename); the
+# roster row may still be reported under stale-rows, so anchor to the registry.
+$GSG release S002 >/dev/null 2>&1; $GSG sessions | grep -qE '^S002 ' && bad "guard2: release left the session registered" || ok "guard2: release drops the session"
 # push-check: surfaces and append-only logs
 BASE=$(git -C "$GS" rev-parse HEAD)
 echo c > "$GS/c.txt"; printf 'x\n' > "$GS/.context_ledger/memory/office/flaws/log.md"
