@@ -10,6 +10,59 @@ bump MINOR; wording and fixes bump PATCH.
 
 ---
 
+## 2.5.0 — 2026-11-26
+
+**Stale roster rows are swept with a committed, cross-checkout signal.**
+Supervisor directive: abandoned `Working` rows are left all over the board and
+future agents presume those peers are still live. Root cause: `ledger-guard`
+judged staleness from the **local** heartbeat file, which never leaves the
+checkout that wrote it — so a row checked in on another machine (exactly the
+one that goes stale) was invisible and lingered forever, frozen in place by the
+"never drop a peer's row" rule. MINOR — new command + exit-gate behavior,
+backward-compatible.
+
+Cross-checkout staleness signal (`ledger-guard`):
+
+- Staleness is now read from the newest `Ledger-Session:` trailer date for a
+  codename — committed history, visible from every checkout — maxed with the
+  local heartbeat when present. A row open past the **row horizon**
+  (`row_stale_hours` in `history.conf`, default 72h; env `LEDGER_ROW_STALE_HOURS`)
+  with no committed activity is judged an abandoned session. The horizon is far
+  above the 4h heartbeat TTL: a live session commits well within days, so it
+  cannot trip it.
+- New `ledger-guard sweep [--apply]`: dry-run by default; `--apply` removes each
+  stale row and appends a terse `**Stale row swept**` line to
+  `agents/sessions.md`. Never touches the acting session's own row. Because the
+  signal is committed evidence (not a guess), a sweep — unlike a hand edit — is
+  the sanctioned way to clear a row that is not your own; each one is a
+  reversible git change.
+- New `ledger-guard stale-rows`: the report alone (no removal), used by the
+  checkpoint nudge.
+
+Gate wiring (`ledger-gates`):
+
+- The **exit gate** now runs `ledger-guard sweep --apply` (alongside the 2.4.0
+  `prune --apply`): abandoned rows are retired at the natural close-out moment.
+- The **checkpoint gate** surfaces a never-blocking notice listing any stale
+  rows, so a newcomer does not read a departed peer as live.
+
+Rule text: the roster clock-out prose, the per-turn guard reminder, and
+`ledger-schema.md` now state the horizon, the committed signal, and that a
+sweep is the one sanctioned way to clear a peer's row — never a hand edit of a
+live one.
+
+PowerShell parity: the `.ps1` editions delegate `stale-rows`/`sweep` to the sh
+edition (git ships sh on Windows), and the `.ps1` gates call them — no new
+engine-specific logic. Runtime on Windows still unverified on this macOS host
+(ADR-8 caveat), but no new ps1 code paths were added.
+
+Tests: +4 (suite 124 → 128) — cross-checkout detection flags only the
+abandoned row (not Done/fresh/self), dry run is read-only, `--apply`
+retires+logs the row and keeps the acting row, a fresh peer is never swept;
+plus a ps1-parity check where an engine is present.
+
+---
+
 ## 2.4.0 — 2026-11-26
 
 **Give the floor teeth, prune aggressively, enforce the codename form, write

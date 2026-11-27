@@ -476,7 +476,17 @@ shift, clock-out closes it). Each agent presents itself by that name in
 events and to the supervisor, and
 name + codename are each unique in the office. `ledger-mem check` flags a
 duplicate and warns when a session entry was logged while a row still
-claimed the office (a forgotten clock-out). The roster is never reset or
+claimed the office (a forgotten clock-out). A row left open past the
+staleness horizon (`row_stale_hours`, default 72h, with no committed
+`Ledger-Session` activity for its codename) is an abandoned session, not
+a live peer: `ledger-guard sweep` — run automatically by the exit gate —
+retires the row and logs the sweep to `agents/sessions.md`. That
+staleness is read from committed history, so it is visible from **every**
+checkout, unlike the per-checkout heartbeat; a row left by a session on
+another machine therefore no longer lingers forever, read by newcomers as
+a live peer. The committed signal is also why a sweep (not a hand edit) is
+the one sanctioned way to clear a row that is not your own — evidence, not
+a guess. The roster is never reset or
 trimmed — the whole office is frozen with it intact at close.
 
 An office moves through three zones, and only the live one is read at session
